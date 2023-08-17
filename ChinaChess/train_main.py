@@ -1,16 +1,10 @@
-import sys
-import time
 from constant import *
 
 
 class Game(object):
-    """
-    游戏类
-    """
-
     def __init__(self, screen, chessboard):
         self.screen = screen
-        self.player = "r"  # 默认走棋的为红方r
+        self.player = "r"
         self.show_attack_count = 0
         self.show_win = False
         self.win_player = None
@@ -36,46 +30,16 @@ class Game(object):
 
 
 class Chess:
-    """
-    棋子类
-    """
-
     def __init__(self, screen, chess_name, row, col):
         super().__init__()
         self.screen = screen
         self.chess_name = chess_name
         self.team = chess_name[0]  # 队伍（红方 r、黑方b）
         self.name = chess_name[2]  # 名字（炮p、马m等
-        self.top_left = (50 + col * 57, 50 + row * 57)
-        self.rect = self.image.get_rect()
-        self.rect.topleft = (50 + col * 57, 50 + row * 57)
         self.row, self.col = row, col
 
     def get_name(self):
         return self.chess_name
-
-    def show(self):
-        # self.screen.blit(self.image, self.top_left)
-        self.screen.blit(self.image, self.rect)
-
-    @staticmethod
-    def get_clicked_chess(player, chessboard):
-        """
-        获取被点击的棋子
-        """
-        for chess in chessboard.get_chess():
-            if pygame.mouse.get_pressed()[0] and chess.rect.collidepoint(pygame.mouse.get_pos()):
-                if player == chess.team:
-                    print(chess.name + "被点击了")
-                    return chess
-
-    def update_position(self, new_row, new_col):
-        """
-        更新要显示的图片的坐标
-        """
-        self.row = new_row
-        self.col = new_col
-        self.rect.topleft = (50 + new_col * 57, 50 + new_row * 57)
 
 
 class ChessBoard(object):
@@ -383,12 +347,11 @@ class ChessBoard(object):
 
         return all_position
 
-    def move_chess(self, new_row, new_col):
+    def move_chess(self, old_row, old_col, new_row, new_col):
         """
         将棋子移动到指定位置
         """
         # 得到要移动的棋子的位置
-        old_row, old_col = ClickBox.singleton.row, ClickBox.singleton.col
         print("旧位置：", old_row, old_col, "新位置：", new_row, new_col)
         # 移动位置
         self.chessboard_map[new_row][new_col] = self.chessboard_map[old_row][old_col]
@@ -532,24 +495,20 @@ def main():
     chessboard = ChessBoard(screen)
     game = Game(screen, chessboard)
 
-    while True:
-        if not game.show_win:
-            if clicked_dot:
-                chessboard.move_chess(row, col)
-                chessboard.print_chessboard()
-                if chessboard.judge_attack_general(game.get_player()):
-                    print("将军....")
-                    if chessboard.judge_win(game.get_player()):
-                        print("获胜...")
-                        game.set_win(game.get_player())
-                    else:
-                        pass
-                game.exchange()
-                break
+    while not game.show_win:
 
-            clicked_chess = Chess.get_clicked_chess(game.get_player(), chessboard)
-            if clicked_chess:
-                put_down_chess_pos = chessboard.get_put_down_postion(clicked_chess)
+        old_row, old_col, row, col = chessboard.random_action(game.get_player())
+
+        chessboard.move_chess(old_row, old_col, row, col)
+        chessboard.print_chessboard()
+        if chessboard.judge_attack_general(game.get_player()):
+            print("将军....")
+            if chessboard.judge_win(game.get_player()):
+                print("获胜...")
+                game.set_win(game.get_player())
+            else:
+                pass
+        game.exchange()
 
 
 if __name__ == '__main__':
