@@ -1,16 +1,35 @@
-from constant import *
+import sys
+import time
+import pygame
 
 
 class Game(object):
+    """
+    游戏类
+    """
+
     def __init__(self, screen, chessboard):
         self.screen = screen
-        self.player = "r"
+        self.player = "r"  # 默认走棋的为红方r
+        self.player_tips_r_image = pygame.image.load("images/red.png")
+        self.player_tips_r_image_topleft = (550, 500)
+        self.player_tips_b_image = pygame.image.load("images/black.png")
+        self.player_tips_b_image_topleft = (550, 100)
+        self.show_attack = False
         self.show_attack_count = 0
+        self.show_attack_time = 100
+        self.attack_img = pygame.image.load("images/pk.png")
         self.show_win = False
+        self.win_img = pygame.image.load("images/win.png")
         self.win_player = None
+        self.show_win_count = 0
+        self.show_win_time = 300
         self.chessboard = chessboard
 
     def get_player(self):
+        """
+        获取当前走棋方
+        """
         return self.player
 
     def exchange(self):
@@ -21,25 +40,102 @@ class Game(object):
         return self.get_player()
 
     def reset_game(self):
+        """重置游戏"""
+        # 所谓的重置游戏，就是将棋盘恢复到默认，走棋方默认的红方
+        # 重建新的默认棋子
         self.chessboard.create_chess()
+        # 设置走棋方为红方
         self.player = 'r'
 
+    def show(self):
+        # 如果一方获胜，那么显示"赢"
+        # 通过计时，实现显示一会"将军"之后，就消失
+        if self.show_win:
+            self.show_win_count += 1
+            if self.show_win_count == self.show_win_time:
+                self.show_win_count = 0
+                self.show_win = False
+                self.reset_game()  # 游戏玩过一局之后，重置游戏
+
+        if self.show_win:
+            if self.win_player == "b":
+                self.screen.blit(self.win_img, (550, 100))
+            else:
+                self.screen.blit(self.win_img, (550, 450))
+            return
+
+        # 通过计时，实现显示一会"将军"之后，就消失
+        if self.show_attack:
+            self.show_attack_count += 1
+            if self.show_attack_count == self.show_attack_time:
+                self.show_attack_count = 0
+                self.show_attack = False
+
+        if self.player == "r":
+            self.screen.blit(self.player_tips_r_image, self.player_tips_r_image_topleft)
+            # 显示"将军"效果
+            if self.show_attack:
+                self.screen.blit(self.attack_img, (230, 400))
+        else:
+            # 显示"将军"效果
+            if self.show_attack:
+                self.screen.blit(self.attack_img, (230, 100))
+            self.screen.blit(self.player_tips_b_image, self.player_tips_b_image_topleft)
+
+    def set_attack(self):
+        """
+        标记"将军"效果
+        """
+        self.show_attack = True
+
     def set_win(self, win_player):
+        """
+        设置获胜方
+        """
         self.show_win = True
         self.win_player = win_player
 
 
-class Chess:
+class Chess(pygame.sprite.Sprite):
+    """
+    棋子类
+    """
+
     def __init__(self, screen, chess_name, row, col):
         super().__init__()
         self.screen = screen
-        self.chess_name = chess_name
+        # self.name = chess_name
         self.team = chess_name[0]  # 队伍（红方 r、黑方b）
         self.name = chess_name[2]  # 名字（炮p、马m等
+        self.image = pygame.image.load("images/" + chess_name + ".png")
+        self.top_left = (50 + col * 57, 50 + row * 57)
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (50 + col * 57, 50 + row * 57)
         self.row, self.col = row, col
 
-    def get_name(self):
-        return self.chess_name
+    def show(self):
+        # self.screen.blit(self.image, self.top_left)
+        self.screen.blit(self.image, self.rect)
+
+    @staticmethod
+    # def get_clicked_chess(chessboard):
+    def get_clicked_chess(player, chessboard):
+        """
+        获取被点击的棋子
+        """
+        for chess in chessboard.get_chess():
+            if pygame.mouse.get_pressed()[0] and chess.rect.collidepoint(pygame.mouse.get_pos()):
+                if player == chess.team:
+                    print(chess.name + "被点击了")
+                    return chess
+
+    def update_position(self, new_row, new_col):
+        """
+        更新要显示的图片的坐标
+        """
+        self.row = new_row
+        self.col = new_col
+        self.rect.topleft = (50 + new_col * 57, 50 + new_row * 57)
 
 
 class ChessBoard(object):
@@ -50,22 +146,39 @@ class ChessBoard(object):
     def __init__(self, screen):
         """初始化"""
         self.screen = screen
+        self.image = pygame.image.load("images/bg.png")
         self.topleft = (50, 50)
         self.chessboard_map = None  # 用来存储当前棋盘上的所有棋子对象
         self.create_chess()  # 调用创建棋盘的方法
 
     def random_action(self, current_player):
-        pass
+        chess_list = self.get_chess()
+        chess_list = [c for c in chess_list if c.team == current_player]
+        for i in range(len(chess_list)):
+            first = chess_list[i]
+            dot_list = self.get_put_down_postion(first)
+            if len(dot_list) == 0:
+                continue
+            first_dot = dot_list[0]
+            return first.row, first.col, first_dot[0], first_dot[1]
+        assert False, "没棋可下了"
 
-    def print_chessboard(self):
-        for line in self.chessboard_map:
-            line_string = []
-            for x in line:
-                if x:
-                    line_string.append(abbreviation_to_chinese[x.get_name()])
-                else:
-                    line_string.append(abbreviation_to_chinese[""])
-            print("".join(line_string) + "\n")
+    def show(self):
+        # 显示棋盘
+        self.screen.blit(self.image, self.topleft)
+
+    def show_chess(self):
+        """显示当前棋盘上的所有棋子"""
+        # 显示棋盘上的所有棋子
+        for line_chess in self.chessboard_map:
+            for chess in line_chess:
+                if chess:
+                    chess.show()
+
+    def show_chessboard_and_chess(self):
+        """显示棋盘以及当前棋盘上所有的棋子"""
+        self.show()
+        self.show_chess()
 
     def create_chess(self):
         """创建默认棋盘上的棋子对象"""
@@ -97,6 +210,10 @@ class ChessBoard(object):
     def get_put_down_postion(self, clicked_chess):
         """获取当前被点击棋子可以落子的位置坐标"""
         put_down_chess_pos = list()
+        # put_down_chess_pos.append((clicked_chess.row - 1, clicked_chess.col))
+        # put_down_chess_pos.append((clicked_chess.row + 1, clicked_chess.col))
+        # put_down_chess_pos.append((clicked_chess.row, clicked_chess.col - 1))
+        # put_down_chess_pos.append((clicked_chess.row, clicked_chess.col + 1))
         team = clicked_chess.team
         row = clicked_chess.row
         col = clicked_chess.col
@@ -494,24 +611,64 @@ class ChessBoard(object):
 
 
 def main():
-    screen = None
+    # 初始化pygame
+    pygame.init()
+    # 创建用来显示画面的对象（理解为相框）
+    screen = pygame.display.set_mode((750, 667))
+    # 游戏背景图片
+    background_img = pygame.image.load("images/bg.jpg")
+    # 游戏棋盘
+    # chessboard_img = pygame.image.load("images/bg.png")
+    # 创建棋盘对象
     chessboard = ChessBoard(screen)
+    # 创建计时器
+    clock = pygame.time.Clock()
+    # 创建游戏对象（像当前走棋方、游戏是否结束等都封装到这个对象中）
     game = Game(screen, chessboard)
 
-    while not game.show_win:
+    # 主循环
+    while True:
+        # 事件检测（例如点击了键盘、鼠标等）
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()  # 退出程序
 
-        old_row, old_col, row, col = chessboard.random_action(game.get_player())
+            # 如果游戏没有获胜方，则游戏继续，否则一直显示"获胜"
+            if not game.show_win and pygame.mouse.get_pressed()[0]:
+                old_row, old_col, new_row, new_col = chessboard.random_action(game.get_player())
+                chessboard.move_chess(old_row, old_col, new_row, new_col)
+                # 检测落子后，是否产生了"将军"功能
+                if chessboard.judge_attack_general(game.get_player()):
+                    print("将军....")
+                    # 检测对方是否可以挽救棋局，如果能挽救，就显示"将军"，否则显示"胜利"
+                    if chessboard.judge_win(game.get_player()):
+                        print("获胜...")
+                        game.set_win(game.get_player())
+                    else:
+                        # 如果攻击到对方，则标记显示"将军"效果
+                        game.set_attack()
+                # 落子之后，交换走棋方
+                game.exchange()
+                # 退出for，以便不让本次的鼠标点击串联到点击棋子
+                break
 
-        chessboard.move_chess(old_row, old_col, row, col)
-        chessboard.print_chessboard()
-        if chessboard.judge_attack_general(game.get_player()):
-            print("将军....")
-            if chessboard.judge_win(game.get_player()):
-                print("获胜...")
-                game.set_win(game.get_player())
-            else:
-                pass
-        game.exchange()
+        # 显示游戏背景
+        screen.blit(background_img, (0, 0))
+        screen.blit(background_img, (0, 270))
+        screen.blit(background_img, (0, 540))
+
+        # 显示棋盘以及棋子
+        chessboard.show_chessboard_and_chess()
+
+        # 显示游戏相关信息
+        game.show()
+
+        # 显示screen这个相框的内容（此时在这个相框中的内容像照片、文字等会显示出来）
+        pygame.display.update()
+
+        # FPS（每秒钟显示画面的次数）
+        clock.tick(60)  # 通过一定的延时，实现1秒钟能够循环60次
 
 
 if __name__ == '__main__':
