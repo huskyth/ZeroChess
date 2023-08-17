@@ -1,6 +1,5 @@
 import sys
 import time
-import pygame
 from constant import *
 
 
@@ -12,19 +11,9 @@ class Game(object):
     def __init__(self, screen, chessboard):
         self.screen = screen
         self.player = "r"  # 默认走棋的为红方r
-        self.player_tips_r_image = pygame.image.load("images/red.png")
-        self.player_tips_r_image_topleft = (550, 500)
-        self.player_tips_b_image = pygame.image.load("images/black.png")
-        self.player_tips_b_image_topleft = (550, 100)
-        self.show_attack = False
         self.show_attack_count = 0
-        self.show_attack_time = 100
-        self.attack_img = pygame.image.load("images/pk.png")
         self.show_win = False
-        self.win_img = pygame.image.load("images/win.png")
         self.win_player = None
-        self.show_win_count = 0
-        self.show_win_time = 300
         self.chessboard = chessboard
 
     def get_player(self):
@@ -41,58 +30,10 @@ class Game(object):
         return self.get_player()
 
     def reset_game(self):
-        """重置游戏"""
-        # 所谓的重置游戏，就是将棋盘恢复到默认，走棋方默认的红方
-        # 重建新的默认棋子
         self.chessboard.create_chess()
-        # 设置走棋方为红方
         self.player = 'r'
 
-    def show(self):
-        # 如果一方获胜，那么显示"赢"
-        # 通过计时，实现显示一会"将军"之后，就消失
-        if self.show_win:
-            self.show_win_count += 1
-            if self.show_win_count == self.show_win_time:
-                self.show_win_count = 0
-                self.show_win = False
-                self.reset_game()  # 游戏玩过一局之后，重置游戏
-
-        if self.show_win:
-            if self.win_player == "b":
-                self.screen.blit(self.win_img, (550, 100))
-            else:
-                self.screen.blit(self.win_img, (550, 450))
-            return
-
-        # 通过计时，实现显示一会"将军"之后，就消失
-        if self.show_attack:
-            self.show_attack_count += 1
-            if self.show_attack_count == self.show_attack_time:
-                self.show_attack_count = 0
-                self.show_attack = False
-
-        if self.player == "r":
-            self.screen.blit(self.player_tips_r_image, self.player_tips_r_image_topleft)
-            # 显示"将军"效果
-            if self.show_attack:
-                self.screen.blit(self.attack_img, (230, 400))
-        else:
-            # 显示"将军"效果
-            if self.show_attack:
-                self.screen.blit(self.attack_img, (230, 100))
-            self.screen.blit(self.player_tips_b_image, self.player_tips_b_image_topleft)
-
-    def set_attack(self):
-        """
-        标记"将军"效果
-        """
-        self.show_attack = True
-
     def set_win(self, win_player):
-        """
-        设置获胜方
-        """
         self.show_win = True
         self.win_player = win_player
 
@@ -101,17 +42,9 @@ class Dot(object):
     group = list()  # 这个类属性用来存储所有的“可落子对象”的引用
 
     def __init__(self, screen, row, col):
-        """初始化"""
-        self.image = pygame.image.load("images/dot2.png")
-        self.rect = self.image.get_rect()
-        self.rect.topleft = (60 + col * 57, 60 + row * 57)
         self.screen = screen
         self.row = row
         self.col = col
-
-    def show(self):
-        """显示一颗棋子"""
-        self.screen.blit(self.image, self.rect.topleft)
 
     @classmethod
     def create_nums_dot(cls, screen, pos_list):
@@ -125,11 +58,6 @@ class Dot(object):
         清除所有可以落子对象
         """
         cls.group.clear()
-
-    @classmethod
-    def show_all(cls):
-        for temp in cls.group:
-            temp.show()
 
     @classmethod
     def click(cls):
@@ -154,16 +82,10 @@ class ClickBox(pygame.sprite.Sprite):
     def __init__(self, screen, row, col):
         super().__init__()
         self.screen = screen
-        self.image = pygame.image.load("images/r_box.png")
         self.rect = self.image.get_rect()
         self.rect.topleft = (50 + col * 57, 50 + row * 57)
         self.row = row
         self.col = col
-
-    @classmethod
-    def show(cls):
-        if cls.singleton:
-            cls.singleton.screen.blit(cls.singleton.image, cls.singleton.rect)
 
     @classmethod
     def clean(cls):
@@ -184,7 +106,6 @@ class Chess(pygame.sprite.Sprite):
         self.chess_name = chess_name
         self.team = chess_name[0]  # 队伍（红方 r、黑方b）
         self.name = chess_name[2]  # 名字（炮p、马m等
-        self.image = pygame.image.load("images/" + chess_name + ".png")
         self.top_left = (50 + col * 57, 50 + row * 57)
         self.rect = self.image.get_rect()
         self.rect.topleft = (50 + col * 57, 50 + row * 57)
@@ -226,27 +147,9 @@ class ChessBoard(object):
     def __init__(self, screen):
         """初始化"""
         self.screen = screen
-        self.image = pygame.image.load("images/bg.png")
         self.topleft = (50, 50)
         self.chessboard_map = None  # 用来存储当前棋盘上的所有棋子对象
         self.create_chess()  # 调用创建棋盘的方法
-
-    def show(self):
-        # 显示棋盘
-        self.screen.blit(self.image, self.topleft)
-
-    def show_chess(self):
-        """显示当前棋盘上的所有棋子"""
-        # 显示棋盘上的所有棋子
-        for line_chess in self.chessboard_map:
-            for chess in line_chess:
-                if chess:
-                    chess.show()
-
-    def show_chessboard_and_chess(self):
-        """显示棋盘以及当前棋盘上所有的棋子"""
-        self.show()
-        self.show_chess()
 
     def print_chessboard(self):
         for line in self.chessboard_map:
@@ -690,58 +593,34 @@ class ChessBoard(object):
 
 
 def main():
-    pygame.init()
-    screen = pygame.display.set_mode((750, 667))
-    background_img = pygame.image.load("images/bg.jpg")
+    screen = None
     chessboard = ChessBoard(screen)
-    clock = pygame.time.Clock()
     game = Game(screen, chessboard)
 
     while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+        if not game.show_win:
+            clicked_dot = Dot.click()
+            if clicked_dot:
+                chessboard.move_chess(clicked_dot.row, clicked_dot.col)
+                chessboard.print_chessboard()
+                Dot.clean_last_position()
+                ClickBox.clean()
+                if chessboard.judge_attack_general(game.get_player()):
+                    print("将军....")
+                    if chessboard.judge_win(game.get_player()):
+                        print("获胜...")
+                        game.set_win(game.get_player())
+                    else:
+                        pass
+                game.exchange()
+                break
 
-            if not game.show_win:
-                clicked_dot = Dot.click()
-                if clicked_dot:
-                    chessboard.move_chess(clicked_dot.row, clicked_dot.col)
-                    chessboard.print_chessboard()
-                    Dot.clean_last_position()
-                    ClickBox.clean()
-                    if chessboard.judge_attack_general(game.get_player()):
-                        print("将军....")
-                        if chessboard.judge_win(game.get_player()):
-                            print("获胜...")
-                            game.set_win(game.get_player())
-                        else:
-                            game.set_attack()
-                    game.exchange()
-                    break
-
-                clicked_chess = Chess.get_clicked_chess(game.get_player(), chessboard)
-                if clicked_chess:
-                    ClickBox(screen, clicked_chess.row, clicked_chess.col)
-                    Dot.clean_last_position()
-                    put_down_chess_pos = chessboard.get_put_down_postion(clicked_chess)
-                    Dot.create_nums_dot(screen, put_down_chess_pos)
-
-        screen.blit(background_img, (0, 0))
-        screen.blit(background_img, (0, 270))
-        screen.blit(background_img, (0, 540))
-
-        chessboard.show_chessboard_and_chess()
-
-        ClickBox.show()
-
-        Dot.show_all()
-
-        game.show()
-
-        pygame.display.update()
-
-        clock.tick(60)
+            clicked_chess = Chess.get_clicked_chess(game.get_player(), chessboard)
+            if clicked_chess:
+                ClickBox(screen, clicked_chess.row, clicked_chess.col)
+                Dot.clean_last_position()
+                put_down_chess_pos = chessboard.get_put_down_postion(clicked_chess)
+                Dot.create_nums_dot(screen, put_down_chess_pos)
 
 
 if __name__ == '__main__':
