@@ -17,9 +17,6 @@ class Game(object):
         self.chessboard = chessboard
 
     def get_player(self):
-        """
-        获取当前走棋方
-        """
         return self.player
 
     def exchange(self):
@@ -38,64 +35,7 @@ class Game(object):
         self.win_player = win_player
 
 
-class Dot(object):
-    group = list()  # 这个类属性用来存储所有的“可落子对象”的引用
-
-    def __init__(self, screen, row, col):
-        self.screen = screen
-        self.row = row
-        self.col = col
-
-    @classmethod
-    def create_nums_dot(cls, screen, pos_list):
-        """批量创建多个对象"""
-        for temp in pos_list:
-            cls.group.append(cls(screen, *temp))
-
-    @classmethod
-    def clean_last_position(cls):
-        """
-        清除所有可以落子对象
-        """
-        cls.group.clear()
-
-    @classmethod
-    def click(cls):
-        for dot in cls.group:
-            if pygame.mouse.get_pressed()[0] and dot.rect.collidepoint(pygame.mouse.get_pos()):
-                print("被点击了「可落子」对象")
-                return dot
-
-
-class ClickBox(pygame.sprite.Sprite):
-    """
-    标记类
-    """
-    singleton = None
-
-    def __new__(cls, *args, **kwargs):
-        """通过重写此方法，实现单例"""
-        if cls.singleton is None:
-            cls.singleton = super().__new__(cls)
-        return cls.singleton
-
-    def __init__(self, screen, row, col):
-        super().__init__()
-        self.screen = screen
-        self.rect = self.image.get_rect()
-        self.rect.topleft = (50 + col * 57, 50 + row * 57)
-        self.row = row
-        self.col = col
-
-    @classmethod
-    def clean(cls):
-        """
-        清理上次的对象
-        """
-        cls.singleton = None
-
-
-class Chess(pygame.sprite.Sprite):
+class Chess:
     """
     棋子类
     """
@@ -119,7 +59,6 @@ class Chess(pygame.sprite.Sprite):
         self.screen.blit(self.image, self.rect)
 
     @staticmethod
-    # def get_clicked_chess(chessboard):
     def get_clicked_chess(player, chessboard):
         """
         获取被点击的棋子
@@ -191,10 +130,6 @@ class ChessBoard(object):
     def get_put_down_postion(self, clicked_chess):
         """获取当前被点击棋子可以落子的位置坐标"""
         put_down_chess_pos = list()
-        # put_down_chess_pos.append((clicked_chess.row - 1, clicked_chess.col))
-        # put_down_chess_pos.append((clicked_chess.row + 1, clicked_chess.col))
-        # put_down_chess_pos.append((clicked_chess.row, clicked_chess.col - 1))
-        # put_down_chess_pos.append((clicked_chess.row, clicked_chess.col + 1))
         team = clicked_chess.team
         row = clicked_chess.row
         col = clicked_chess.col
@@ -599,12 +534,9 @@ def main():
 
     while True:
         if not game.show_win:
-            clicked_dot = Dot.click()
             if clicked_dot:
-                chessboard.move_chess(clicked_dot.row, clicked_dot.col)
+                chessboard.move_chess(row, col)
                 chessboard.print_chessboard()
-                Dot.clean_last_position()
-                ClickBox.clean()
                 if chessboard.judge_attack_general(game.get_player()):
                     print("将军....")
                     if chessboard.judge_win(game.get_player()):
@@ -617,10 +549,7 @@ def main():
 
             clicked_chess = Chess.get_clicked_chess(game.get_player(), chessboard)
             if clicked_chess:
-                ClickBox(screen, clicked_chess.row, clicked_chess.col)
-                Dot.clean_last_position()
                 put_down_chess_pos = chessboard.get_put_down_postion(clicked_chess)
-                Dot.create_nums_dot(screen, put_down_chess_pos)
 
 
 if __name__ == '__main__':
