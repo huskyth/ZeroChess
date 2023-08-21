@@ -1,3 +1,4 @@
+# 由于没有系统学过selenium，因此这个爬虫不稳定
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 import time
@@ -14,21 +15,29 @@ def get_next_btn(c):
     driver.find_element(By.TAG_NAME, 'input').submit()
 
 
+def jump_main_page():
+    driver.get("https://www.xqbase.com/xqbase/?")
+    driver.find_element(By.TAG_NAME, 'input').submit()
+
+
+def jump_to_next_paeg(c):
+    for i in range(c):
+        a_list = driver.find_elements(By.TAG_NAME, 'a')
+
+        for a in a_list:
+            if '>' == str(a.text):
+                a.click()
+                break
+        time.sleep(1)
+
+
 def get_before_download_list(c):
     before_download_list = []
     s = set()
+    jump_main_page()
 
-    driver.get("https://www.xqbase.com/xqbase/?")
-    driver.find_element(By.TAG_NAME, 'input').submit()
-    a_list = driver.find_elements(By.TAG_NAME, 'a')
+    jump_to_next_paeg(c)
 
-    for a in a_list:
-        if str(c) == str(a.text):
-            print("c = {}, 第{}此".format(c, i))
-            a.click()
-            break
-
-    time.sleep(1)
     a_list = driver.find_elements(By.TAG_NAME, 'a')
     for a in a_list:
         if "?gameid=" in str(a.get_attribute('href')) and a.get_attribute("href") not in s:
@@ -60,7 +69,6 @@ for j in range(50):
     for i in range(20):
         before_download_list = get_before_download_list(j)
         download_a_file(before_download_list[i])
-
 
 time.sleep(10)
 driver.quit()
