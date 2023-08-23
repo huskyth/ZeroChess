@@ -64,10 +64,10 @@ driver.get("https://www.xqbase.com/xqbase/?")
 driver.find_element(By.TAG_NAME, 'input').submit()
 
 for j in range(50):
+    for i in range(20):
+        before_download_list = get_before_download_list()
+        download_a_file(before_download_list[i])
     jump_to_next_paeg(j)
-for i in range(20):
-    before_download_list = get_before_download_list()
-    download_a_file(before_download_list[i])
 
 time.sleep(10)
 driver.quit()
