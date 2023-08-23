@@ -3,12 +3,6 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 import time
 
-driver = webdriver.Chrome()
-driver.get("https://www.xqbase.com/xqbase/?")
-driver.find_element(By.TAG_NAME, 'input').submit()
-
-a_list = driver.find_elements(By.TAG_NAME, 'a')
-
 
 def get_next_btn(c):
     driver.get("https://www.xqbase.com/xqbase/?")
@@ -20,38 +14,38 @@ def jump_main_page():
     driver.find_element(By.TAG_NAME, 'input').submit()
 
 
-def jump_to_next_paeg(c):
-    for i in range(c):
+def jump_to_next_paeg(j):
+    a_list = driver.find_elements(By.TAG_NAME, 'a')
+    for i in range(len(a_list)):
+        a = a_list[i]
+        if '>' == str(a.text):
+            a.click()
+            break
         a_list = driver.find_elements(By.TAG_NAME, 'a')
-
-        for a in a_list:
-            if '>' == str(a.text):
-                a.click()
-                break
-        time.sleep(1)
+    time.sleep(1)
 
 
-def get_before_download_list(c):
+def get_before_download_list():
     before_download_list = []
     s = set()
-    jump_main_page()
-
-    jump_to_next_paeg(c)
-
     a_list = driver.find_elements(By.TAG_NAME, 'a')
-    for a in a_list:
+
+    for i in range(len(a_list)):
+        a = a_list[i]
         if "?gameid=" in str(a.get_attribute('href')) and a.get_attribute("href") not in s:
             s.add(a.get_attribute("href"))
             before_download_list.append(a)
+        a_list = driver.find_elements(By.TAG_NAME, 'a')
     return before_download_list
 
 
 def download_a_file(to):
     to.click()
-    driver.get(str(to.get_attribute('href')))
+    driver.switch_to.window(driver.window_handles[1])
     download_list = driver.find_elements(By.TAG_NAME, "a")
-    for d in download_list:
+    for i in range(len(download_list)):
         try:
+            d = download_list[i]
             img = d.find_element(By.TAG_NAME, "img")
             if img and str(img.get_attribute("src")).endswith("/images/pgn.gif"):
                 d.click()
@@ -59,16 +53,21 @@ def download_a_file(to):
                 driver.switch_to.window(win[1])
                 driver.close()
                 driver.switch_to.window(win[0])
-                driver.back()
                 break
         except:
             pass
+        download_list = driver.find_elements(By.TAG_NAME, "a")
 
+
+driver = webdriver.Chrome()
+driver.get("https://www.xqbase.com/xqbase/?")
+driver.find_element(By.TAG_NAME, 'input').submit()
 
 for j in range(50):
-    for i in range(20):
-        before_download_list = get_before_download_list(j)
-        download_a_file(before_download_list[i])
+    jump_to_next_paeg(j)
+for i in range(20):
+    before_download_list = get_before_download_list()
+    download_a_file(before_download_list[i])
 
 time.sleep(10)
 driver.quit()
