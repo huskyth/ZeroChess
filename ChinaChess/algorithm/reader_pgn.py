@@ -112,6 +112,10 @@ not_see_number_2_int = {
 
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
 numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+labels = create_uci_labels()
+label_to_index = {}
+for i, l in enumerate(labels):
+    label_to_index[l] = i
 
 
 def find_position_of_a_chinese(chinese_name, chinese_position, board, current_player):
@@ -121,6 +125,12 @@ def find_position_of_a_chinese(chinese_name, chinese_position, board, current_pl
     for i in range(len(board)):
         if board[i][col].all_name == all_name:
             return i, col
+
+
+def build_pi(i):
+    temp = [0] * ALL_SELECTION
+    temp[i] = 1
+    return temp
 
 
 def parse(string, board, current_player):
@@ -133,22 +143,28 @@ def parse(string, board, current_player):
     end_row = -1
     if chinese_name in ['相', '象']:
         end_row = row - 2 if '进' == opt else row + 2
-    if chinese_name in ['车','炮','兵','卒','将','帅']:
+    if chinese_name in ['车', '炮', '兵', '卒', '将', '帅']:
+        det = chinese_number_2_int[next_position_chinese] if next_position_chinese in chinese_number_2_int else \
+            not_see_number_2_int[
+                next_position_chinese]
         if '进' == opt:
-
+            end_row = row - det
         elif '退' == opt:
-
+            end_row = row + det
         else:
-
-        row = row + 2 if '进' == opt else row - 2
-
+            end_row = row
+    if chinese_name in ['士', '仕']:
+        end_row = row - 1 if '进' == opt else row + 1
+    if chinese_name in ['马']:
+        det = 3 - abs(col - end_col)
+        end_row = row - det if '进' == opt else row + det
+    move_string = letters[-col] + numbers[9 - row] + letters[-end_col] + numbers[9 - end_row]
+    idx = label_to_index[move_string]
+    return row, col, end_row, end_col, build_pi(idx)
 
 
 if __name__ == '__main__':
-    labels = create_uci_labels()
-    label_to_index = {}
-    for i, l in enumerate(labels):
-        label_to_index[l] = i
+
     y = read_from_pgn(r"C:\Users\Administrator\Desktop\ZeroChess\ChinaChess\dataset\0a45c9b6.pgn")
     b = ChinaChessBoard()
     episode = []
