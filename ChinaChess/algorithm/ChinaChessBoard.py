@@ -5,7 +5,7 @@ class Chess:
 
     def __init__(self, chess_name, row, col):
         super().__init__()
-        # self.name = chess_name
+        self.all_name = chess_name
         self.team = chess_name[0]  # 队伍（红方 r、黑方b）
         self.name = chess_name[2]  # 名字（炮p、马m等
         self.row, self.col = row, col
@@ -452,6 +452,19 @@ class ChinaChessBoard:
         all_position = list(set(all_position) - set(deleting_position))
 
         return all_position
+
+    def move_chess(self, old_row, old_col, new_row, new_col):
+        """
+        将棋子移动到指定位置
+        """
+        # 得到要移动的棋子的位置
+        print("旧位置：", old_row, old_col, "新位置：", new_row, new_col)
+        # 移动位置
+        self.pieces[new_row][new_col] = self.pieces[old_row][old_col]
+        # 修改棋子的属性
+        self.pieces[new_row][new_col].update_position(new_row, new_col)
+        # 清楚之前位置为None
+        self.pieces[old_row][old_col] = None
 
 
 if __name__ == '__main__':
