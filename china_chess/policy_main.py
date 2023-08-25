@@ -4,6 +4,8 @@ import pygame
 
 from pathlib import Path
 
+from china_chess.constant import abbreviation_to_chinese
+
 IMAGE_PATH = Path(__file__).parent
 
 
@@ -206,6 +208,18 @@ class ChessBoard(object):
                     self.chessboard_map[row][col] = Chess(self.screen, chess_name, row, col)
                 else:
                     self.chessboard_map[row][col] = None
+
+    def print_visible_string(self):
+        result = []
+        for line in self.chessboard_map:
+            show = []
+            for item in line:
+                temp = "" if not item else item.all_name
+                show.append(abbreviation_to_chinese[temp])
+            print("".join(show))
+            result.append("".join(show) + "\n")
+        print()
+        return result
 
     def get_chess(self):
         """获取所有的棋盘上的棋子对象列表"""
