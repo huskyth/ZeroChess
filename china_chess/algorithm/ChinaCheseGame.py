@@ -1,7 +1,7 @@
 from Game import Game
-from ChinaChessBoard import *
+from china_chess_board import *
 import numpy as np
-from ChinaChess.constant import *
+from china_chess.constant import *
 
 
 class ChinaCheseGame(Game):

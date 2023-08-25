@@ -18,7 +18,7 @@ g = TicTacToeGame()
 
 To start training a model for TicTacToe:
 ```bash
-python main.py
+python bakeup_main.py
 ```
 To start a tournament of 100 episodes with the model-based player against a random player:
 ```bash

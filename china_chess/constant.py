@@ -1,3 +1,5 @@
+from pathlib import Path
+
 abbreviation_to_chinese = {
     "b_c": '黑车', "b_m": "黑马", "b_x": "黑相", "b_s": "黑士", "b_j": "黑将",
     "b_p": "黑炮",
@@ -12,8 +14,17 @@ RED_INT = 1
 BLACK_STRING = 'b'
 BLACK_INT = -1
 NOT_END = 0
+CHINESE_NUMBER_TO_INT = {
+    '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9
+}
+NOT_SEE_NUMBER_TO_INT = {
+    '１': 1, '２': 2, '３': 3, '４': 4, '５': 5, '６': 6, '７': 7, '８': 8, '９': 9
+}
+DATASET_PATH = Path(__file__).parent / "dataset"
+LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
+NUMBERS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
-abbreviation_to_value = {
+ABBREVIATION_TO_VALUE = {
     "b_c": -1, "b_m": -2, "b_x": -3, "b_s": -4, "b_j": -5,
     "b_p": -6,
     "b_z": -7,
@@ -23,14 +34,25 @@ abbreviation_to_value = {
     "": 0
 }
 
+NAME_TO_ENGLISH_CHAR = {
+    '相': 'r_x',
+    '卒': 'b_z',
+    '象': 'b_x',
+    '兵': 'r_z',
+    '帅': 'r_j',
+    '将': 'b_j',
+    '仕': 'r_s',
+    '士': 'b_s',
+
+}
+PAO_MA_CHE_AFTER_ENGLISH = {'炮': '_p', '马': '_m', '车': '_c'}
+
 ALL_SELECTION = 2086
 
 
 # 创建所有合法走子UCI，size 2086
 def create_uci_labels():
     labels_array = []
-    letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
-    numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
     Advisor_labels = ['d7e8', 'e8d7', 'e8f9', 'f9e8', 'd0e1', 'e1d0', 'e1f2', 'f2e1',
                       'd2e1', 'e1d2', 'e1f0', 'f0e1', 'd9e8', 'e8d9', 'e8f7', 'f7e8']
@@ -47,7 +69,7 @@ def create_uci_labels():
                             [(-2, -1), (-1, -2), (-2, 1), (1, -2), (2, -1), (-1, 2), (2, 1), (1, 2)]]  # 马走日
             for (l2, n2) in destinations:
                 if (l1, n1) != (l2, n2) and l2 in range(9) and n2 in range(10):
-                    move = letters[l1] + numbers[n1] + letters[l2] + numbers[n2]
+                    move = LETTERS[l1] + NUMBERS[n1] + LETTERS[l2] + NUMBERS[n2]
                     labels_array.append(move)
 
     for p in Advisor_labels:
@@ -57,3 +79,15 @@ def create_uci_labels():
         labels_array.append(p)
 
     return labels_array
+
+
+LABELS = create_uci_labels()
+LABELS_TO_INDEX = {}
+for i, l in enumerate(LABELS):
+    LABELS_TO_INDEX[l] = i
+
+
+def from_chinese_to_english_char(chinese_name, cur_player):
+    if chinese_name in PAO_MA_CHE_AFTER_ENGLISH:
+        return cur_player + PAO_MA_CHE_AFTER_ENGLISH[chinese_name]
+    return NAME_TO_ENGLISH_CHAR[chinese_name]

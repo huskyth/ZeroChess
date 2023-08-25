@@ -2,6 +2,10 @@ import sys
 import time
 import pygame
 
+from pathlib import Path
+
+IMAGE_PATH = Path(__file__).parent
+
 
 class Game(object):
     """
@@ -104,10 +108,10 @@ class Chess(pygame.sprite.Sprite):
     def __init__(self, screen, chess_name, row, col):
         super().__init__()
         self.screen = screen
-        # self.name = chess_name
+        self.all_name = chess_name
         self.team = chess_name[0]  # 队伍（红方 r、黑方b）
         self.name = chess_name[2]  # 名字（炮p、马m等
-        self.image = pygame.image.load("images/" + chess_name + ".png")
+        self.image = pygame.image.load(IMAGE_PATH / ("images/" + chess_name + ".png"))
         self.top_left = (50 + col * 57, 50 + row * 57)
         self.rect = self.image.get_rect()
         self.rect.topleft = (50 + col * 57, 50 + row * 57)
@@ -146,7 +150,7 @@ class ChessBoard(object):
     def __init__(self, screen):
         """初始化"""
         self.screen = screen
-        self.image = pygame.image.load("images/bg.png")
+        self.image = pygame.image.load(IMAGE_PATH / "images/bg.png")
         self.topleft = (50, 50)
         self.chessboard_map = None  # 用来存储当前棋盘上的所有棋子对象
         self.create_chess()  # 调用创建棋盘的方法

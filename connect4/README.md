@@ -20,7 +20,7 @@ Make similar changes to ```pit.py```.
 
 To start training a model for Connect4:
 ```bash
-python main.py
+python bakeup_main.py
 ```
 To start a tournament of 100 episodes with the model-based player against a random player:
 ```bash
