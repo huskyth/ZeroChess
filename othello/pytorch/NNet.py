@@ -70,12 +70,13 @@ class NNetWrapper(NeuralNet):
                 pi_losses.update(l_pi.item(), boards.size(0))
                 v_losses.update(l_v.item(), boards.size(0))
                 t.set_postfix(Loss_pi=pi_losses, Loss_v=v_losses)
-                self.summary.add_float(step, pi_losses.avg, "Policy Loss")
-                self.summary.add_float(step, v_losses.avg, "Value Loss")
+                self.summary.add_float(step, pi_losses.avg, "Training Policy Loss")
+                self.summary.add_float(step, v_losses.avg, "Training Value Loss")
                 # compute gradient and do SGD step
                 optimizer.zero_grad()
                 total_loss.backward()
                 optimizer.step()
+        self.save_checkpoint()
 
     def predict(self, board):
         """
