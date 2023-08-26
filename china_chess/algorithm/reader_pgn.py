@@ -3,7 +3,7 @@ class PGNReader:
 
     @staticmethod
     def read_from_pgn(file_name):
-        with open(file_name, encoding="GB2312") as file:
+        with open(file_name, encoding="GBK") as file:
             flines = file.readlines()
 
         lines = []
