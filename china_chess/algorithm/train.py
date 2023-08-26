@@ -1,21 +1,13 @@
-from torch.utils.data import dataloader
-
 from china_chess.algorithm.data_loader import LoadData
+from china_chess.constant import MODEL_PATH
 from othello.pytorch.NNet import NNetWrapper
-from china_chese_game import *
-
-EPOCH = 5
 
 
 def train():
     train_dataset = LoadData()
-    train_loader = dataloader.DataLoader(
-        dataset=train_dataset,
-        batch_size=1,
-        shuffle=False
-    )
-    ccg = ChinaCheseGame()
-    net = NNetWrapper(ccg)
+
+    net = NNetWrapper()
+    net.load_checkpoint(folder=MODEL_PATH)
 
     test = train_dataset.get_all_examples()
     net.train(test)
