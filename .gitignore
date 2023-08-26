@@ -11,3 +11,5 @@ checkpoints/
 # For PyCharm users
 .idea/
 
+china_chess/algorithm/checkpoint
+china_chess/summary

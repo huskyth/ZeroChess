@@ -2,7 +2,7 @@ import sys
 
 sys.path.append('..')
 from utils import *
-
+from china_chess.constant import *
 import argparse
 import torch
 import torch.nn as nn
@@ -11,10 +11,10 @@ import torch.optim as optim
 
 
 class OthelloNNet(nn.Module):
-    def __init__(self, game, args):
+    def __init__(self, args):
         # game params
-        self.board_x, self.board_y = game.getBoardSize()
-        self.action_size = game.getActionSize()
+        self.board_x, self.board_y = 10, 9
+        self.action_size = len(LABELS)
         self.args = args
 
         super(OthelloNNet, self).__init__()

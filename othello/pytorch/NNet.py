@@ -8,7 +8,7 @@ from tqdm import tqdm
 sys.path.append('../../')
 from utils import *
 from NeuralNet import NeuralNet
-
+from china_chess.constant import *
 import torch
 import torch.optim as optim
 from china_chess.algorithm.tensor_board_tool import *
@@ -17,7 +17,7 @@ from .OthelloNNet import OthelloNNet as onnet
 args = dotdict({
     'lr': 0.001,
     'dropout': 0.3,
-    'epochs': 100,
+    'epochs': 500,
     'batch_size': 32,
     'cuda': torch.cuda.is_available(),
     'num_channels': 512,
@@ -25,10 +25,10 @@ args = dotdict({
 
 
 class NNetWrapper(NeuralNet):
-    def __init__(self, game):
-        self.nnet = onnet(game, args)
-        self.board_x, self.board_y = game.getBoardSize()
-        self.action_size = game.getActionSize()
+    def __init__(self):
+        self.nnet = onnet(args)
+        self.board_x, self.board_y = 10, 9
+        self.action_size = len(LABELS)
         self.summary = MySummary()
         if args.cuda:
             self.nnet.cuda()
