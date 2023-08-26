@@ -6,10 +6,6 @@ import chardet
 
 def all_files(path):
     files = [os.path.join(path, file) for file in os.listdir(path)]
-
-    # 遍历文件列表，输出文件名
-    for file in files:
-        print(file)
     return files
 
 

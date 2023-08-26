@@ -1,5 +1,5 @@
 from othello.pytorch.NNet import NNetWrapper
-from ChinaCheseGame import *
+from china_chese_game import *
 
 
 def main():
