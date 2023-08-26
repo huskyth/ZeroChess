@@ -791,6 +791,10 @@ def main():
                 else:
                     old_row, old_col, new_row, new_col = chessboard.policy_by_model()
 
+                    if None in [old_row, old_col, new_row, new_col]:
+                        game.set_win('r')
+                        break
+
                     chessboard.move_chess(new_row, new_col, game.get_player(), old_row, old_col)
                     # 检测落子后，是否产生了"将军"功能
                     if chessboard.judge_attack_general(game.get_player()):

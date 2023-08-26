@@ -40,6 +40,8 @@ class PolicyAdapter:
         return LETTERS[8 - column] + NUMBERS[row] + LETTERS[8 - end_column] + NUMBERS[end_row]
 
     def get_next_policy(self, original_game_board_with_chess, current_player, can_move_list):
+        if not can_move_list:
+            return None, None, None, None
         original_game_board_with_chess_temp = [[j for j in range(len(original_game_board_with_chess[0]))] for i in
                                                range(len(original_game_board_with_chess))]
         for i in range(len(original_game_board_with_chess)):
@@ -58,4 +60,6 @@ class PolicyAdapter:
             if max_move_p < pi[idx]:
                 max_move_string = move_temp
                 max_move_p = pi[idx]
+        if max_move_string is None:
+            print()
         return self._parse_move(max_move_string)
