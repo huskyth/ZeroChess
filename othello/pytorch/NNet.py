@@ -11,13 +11,13 @@ from NeuralNet import NeuralNet
 
 import torch
 import torch.optim as optim
-
+from china_chess.algorithm.tensor_board_tool import *
 from .OthelloNNet import OthelloNNet as onnet
 
 args = dotdict({
     'lr': 0.001,
     'dropout': 0.3,
-    'epochs': 10,
+    'epochs': 100,
     'batch_size': 32,
     'cuda': torch.cuda.is_available(),
     'num_channels': 512,
@@ -29,7 +29,7 @@ class NNetWrapper(NeuralNet):
         self.nnet = onnet(game, args)
         self.board_x, self.board_y = game.getBoardSize()
         self.action_size = game.getActionSize()
-
+        self.summary = MySummary()
         if args.cuda:
             self.nnet.cuda()
 
@@ -38,7 +38,7 @@ class NNetWrapper(NeuralNet):
         examples: list of examples, each example is of form (board, pi, v)
         """
         optimizer = optim.Adam(self.nnet.parameters())
-
+        step = 0
         for epoch in range(args.epochs):
             print('EPOCH ::: ' + str(epoch + 1))
             self.nnet.train()
@@ -49,6 +49,7 @@ class NNetWrapper(NeuralNet):
 
             t = tqdm(range(batch_count), desc='Training Net')
             for _ in t:
+                step += 1
                 sample_ids = np.random.randint(len(examples), size=args.batch_size)
                 boards, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
                 boards = torch.FloatTensor(np.array(boards).astype(np.float64))
@@ -69,7 +70,8 @@ class NNetWrapper(NeuralNet):
                 pi_losses.update(l_pi.item(), boards.size(0))
                 v_losses.update(l_v.item(), boards.size(0))
                 t.set_postfix(Loss_pi=pi_losses, Loss_v=v_losses)
-
+                self.summary.add_float(step, pi_losses.avg, "Policy Loss")
+                self.summary.add_float(step, v_losses.avg, "Value Loss")
                 # compute gradient and do SGD step
                 optimizer.zero_grad()
                 total_loss.backward()
