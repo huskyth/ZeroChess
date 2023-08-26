@@ -144,6 +144,40 @@ class Chess(pygame.sprite.Sprite):
         self.rect.topleft = (50 + new_col * 57, 50 + new_row * 57)
 
 
+class ClickBox(pygame.sprite.Sprite):
+    """
+    标记类
+    """
+    singleton = None
+
+    def __new__(cls, *args, **kwargs):
+        """通过重写此方法，实现单例"""
+        if cls.singleton is None:
+            cls.singleton = super().__new__(cls)
+        return cls.singleton
+
+    def __init__(self, screen, row, col):
+        super().__init__()
+        self.screen = screen
+        self.image = pygame.image.load("images/r_box.png")
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (50 + col * 57, 50 + row * 57)
+        self.row = row
+        self.col = col
+
+    @classmethod
+    def show(cls):
+        if cls.singleton:
+            cls.singleton.screen.blit(cls.singleton.image, cls.singleton.rect)
+
+    @classmethod
+    def clean(cls):
+        """
+        清理上次的对象
+        """
+        cls.singleton = None
+
+
 class ChessBoard(object):
     """
     棋盘类
@@ -485,11 +519,15 @@ class ChessBoard(object):
 
         return all_position
 
-    def move_chess(self, old_row, old_col, new_row, new_col):
+    def move_chess(self, new_row, new_col, current_player, old_row=None, old_col=None):
         """
         将棋子移动到指定位置
         """
         # 得到要移动的棋子的位置
+        if current_player == 'r':
+            old_row, old_col = ClickBox.singleton.row, ClickBox.singleton.col
+        else:
+            pass
         print("旧位置：", old_row, old_col, "新位置：", new_row, new_col)
         # 移动位置
         self.chessboard_map[new_row][new_col] = self.chessboard_map[old_row][old_col]
@@ -628,6 +666,51 @@ class ChessBoard(object):
         return True
 
 
+class Dot(object):
+    group = list()  # 这个类属性用来存储所有的“可落子对象”的引用
+
+    def __init__(self, screen, row, col):
+        """初始化"""
+        self.image = pygame.image.load("images/dot2.png")
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (60 + col * 57, 60 + row * 57)
+        self.screen = screen
+        self.row = row
+        self.col = col
+
+    def show(self):
+        """显示一颗棋子"""
+        self.screen.blit(self.image, self.rect.topleft)
+
+    @classmethod
+    def create_nums_dot(cls, screen, pos_list):
+        """批量创建多个对象"""
+        for temp in pos_list:
+            cls.group.append(cls(screen, *temp))
+
+    @classmethod
+    def clean_last_position(cls):
+        """
+        清除所有可以落子对象
+        """
+        cls.group.clear()
+
+    @classmethod
+    def show_all(cls):
+        for temp in cls.group:
+            temp.show()
+
+    @classmethod
+    def click(cls):
+        """
+        点击棋子
+        """
+        for dot in cls.group:
+            if pygame.mouse.get_pressed()[0] and dot.rect.collidepoint(pygame.mouse.get_pos()):
+                print("被点击了「可落子」对象")
+                return dot
+
+
 def main():
     # 初始化pygame
     pygame.init()
@@ -653,23 +736,60 @@ def main():
                 sys.exit()  # 退出程序
 
             # 如果游戏没有获胜方，则游戏继续，否则一直显示"获胜"
-            if not game.show_win and pygame.mouse.get_pressed()[0]:
-                old_row, old_col, new_row, new_col = chessboard.random_action(game.get_player())
-                chessboard.move_chess(old_row, old_col, new_row, new_col)
-                # 检测落子后，是否产生了"将军"功能
-                if chessboard.judge_attack_general(game.get_player()):
-                    print("将军....")
-                    # 检测对方是否可以挽救棋局，如果能挽救，就显示"将军"，否则显示"胜利"
-                    if chessboard.judge_win(game.get_player()):
-                        print("获胜...")
-                        game.set_win(game.get_player())
-                    else:
-                        # 如果攻击到对方，则标记显示"将军"效果
-                        game.set_attack()
-                # 落子之后，交换走棋方
-                game.exchange()
-                # 退出for，以便不让本次的鼠标点击串联到点击棋子
-                break
+            if not game.show_win:
+                if game.get_player() == 'r':
+                    clicked_row, clicked_col = None, None
+                    clicked_chess = Chess.get_clicked_chess(game.get_player(), chessboard)
+                    if clicked_chess:
+                        clicked_row, clicked_col = clicked_chess.row, clicked_chess.col
+                        # 创建选中棋子对象
+                        ClickBox(screen, clicked_chess.row, clicked_chess.col)
+                        # 清除之前的所有的可以落子对象
+                        Dot.clean_last_position()
+                        # 计算当前被点击的棋子可以落子的位置
+                        put_down_chess_pos = chessboard.get_put_down_postion(clicked_chess)
+                        # 根据当前被点击的棋子创建可以落子的对象
+                        Dot.create_nums_dot(screen, put_down_chess_pos)
+                    clicked_dot = Dot.click()
+
+                    if clicked_dot:
+                        chessboard.move_chess(clicked_dot.row,
+                                              clicked_dot.col, game.get_player(), clicked_row, clicked_col)
+                        # 清理「点击对象」、「可落子位置对象」
+                        Dot.clean_last_position()
+                        ClickBox.clean()
+
+                        if chessboard.judge_attack_general(game.get_player()):
+                            print("将军....")
+                            # 检测对方是否可以挽救棋局，如果能挽救，就显示"将军"，否则显示"胜利"
+                            if chessboard.judge_win(game.get_player()):
+                                print("获胜...")
+                                game.set_win(game.get_player())
+                            else:
+                                # 如果攻击到对方，则标记显示"将军"效果
+                                game.set_attack()
+                        # 落子之后，交换走棋方
+                        game.exchange()
+                        # 退出for，以便不让本次的鼠标点击串联到点击棋子
+                        break
+                else:
+                    old_row, old_col, new_row, new_col = chessboard.random_action(game.get_player())
+
+                    chessboard.move_chess(new_row, new_col, game.get_player(), old_row, old_col)
+                    # 检测落子后，是否产生了"将军"功能
+                    if chessboard.judge_attack_general(game.get_player()):
+                        print("将军....")
+                        # 检测对方是否可以挽救棋局，如果能挽救，就显示"将军"，否则显示"胜利"
+                        if chessboard.judge_win(game.get_player()):
+                            print("获胜...")
+                            game.set_win(game.get_player())
+                        else:
+                            # 如果攻击到对方，则标记显示"将军"效果
+                            game.set_attack()
+                    # 落子之后，交换走棋方
+                    game.exchange()
+                    # 退出for，以便不让本次的鼠标点击串联到点击棋子
+                    break
 
         # 显示游戏背景
         screen.blit(background_img, (0, 0))
@@ -678,6 +798,12 @@ def main():
 
         # 显示棋盘以及棋子
         chessboard.show_chessboard_and_chess()
+
+        # 标记点击的棋子
+        ClickBox.show()
+
+        # 显示可以落子的位置图片
+        Dot.show_all()
 
         # 显示游戏相关信息
         game.show()

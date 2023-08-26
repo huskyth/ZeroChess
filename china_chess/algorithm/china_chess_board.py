@@ -1,4 +1,4 @@
-from china_chess.policy_main import *
+from china_chess.policy_main_player_and_machine import *
 import numpy as np
 from china_chess.constant import *
 
