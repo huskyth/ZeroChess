@@ -4,6 +4,7 @@ import pygame
 
 from pathlib import Path
 
+from china_chess.algorithm.alg_game_adapter import PolicyAdapter
 from china_chess.constant import abbreviation_to_chinese
 
 IMAGE_PATH = Path(__file__).parent
@@ -190,6 +191,18 @@ class ChessBoard(object):
         self.topleft = (50, 50)
         self.chessboard_map = None  # 用来存储当前棋盘上的所有棋子对象
         self.create_chess()  # 调用创建棋盘的方法
+        self.policy = PolicyAdapter()
+
+    def all_selections(self, current_player):
+        chess_list = self.get_chess()
+        chess_list = [c for c in chess_list if c.team == current_player]
+        result = []
+        for i in range(len(chess_list)):
+            first = chess_list[i]
+            dot_list = self.get_put_down_postion(first)
+            for x in dot_list:
+                result.append((first.row, first.col, *x))
+        return result
 
     def random_action(self, current_player):
         chess_list = self.get_chess()
@@ -202,6 +215,9 @@ class ChessBoard(object):
             first_dot = dot_list[0]
             return first.row, first.col, first_dot[0], first_dot[1]
         assert False, "没棋可下了"
+
+    def policy_by_model(self):
+        return self.policy.get_next_policy(self.chessboard_map, 'b', self.all_selections('b'))
 
     def show(self):
         # 显示棋盘
@@ -773,7 +789,7 @@ def main():
                         # 退出for，以便不让本次的鼠标点击串联到点击棋子
                         break
                 else:
-                    old_row, old_col, new_row, new_col = chessboard.random_action(game.get_player())
+                    old_row, old_col, new_row, new_col = chessboard.policy_by_model()
 
                     chessboard.move_chess(new_row, new_col, game.get_player(), old_row, old_col)
                     # 检测落子后，是否产生了"将军"功能

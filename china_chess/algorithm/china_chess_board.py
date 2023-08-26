@@ -1,6 +1,7 @@
 from china_chess.policy_main_player_and_machine import *
 import numpy as np
 from china_chess.constant import *
+import copy
 
 
 class ChinaChessBoard(ChessBoard):
@@ -41,6 +42,6 @@ if __name__ == '__main__':
     # print(y)
     # x.flip_up_down_and_left_right()
     # x.print_visible_string()
-    s = (1,2,3)
+    s = (1, 2, 3)
     s += (5,)
     print(s)

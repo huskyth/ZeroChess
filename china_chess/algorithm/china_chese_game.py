@@ -1,5 +1,5 @@
 from Game import Game
-from china_chess_board import *
+from china_chess.algorithm.china_chess_board import *
 import numpy as np
 from china_chess.constant import *
 
