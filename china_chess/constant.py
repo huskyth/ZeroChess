@@ -9,6 +9,8 @@ abbreviation_to_chinese = {
     "r_c": "红车", "r_m": "红马", "r_x": "红相", "r_s": "红士", "r_j": "红帅",
     "": "一一"
 }
+MAP_HEIGHT = 10
+MAP_WIDTH = 9
 RED_STRING = 'r'
 RED_INT = 1
 BLACK_STRING = 'b'
@@ -21,6 +23,7 @@ NOT_SEE_NUMBER_TO_INT = {
     '１': 1, '２': 2, '３': 3, '４': 4, '５': 5, '６': 6, '７': 7, '８': 8, '９': 9
 }
 DATASET_PATH = Path(__file__).parent / "dataset"
+TRAIN_DATASET_PATH = Path(__file__).parent / "train_data"
 LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
 NUMBERS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 

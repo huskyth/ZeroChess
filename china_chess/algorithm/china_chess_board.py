@@ -1,4 +1,6 @@
 from china_chess.policy_main import *
+import numpy as np
+from china_chess.constant import *
 
 
 class ChinaChessBoard(ChessBoard):
@@ -18,12 +20,27 @@ class ChinaChessBoard(ChessBoard):
     def flip_up_down_and_left_right(self):
         for i in range(len(self.chessboard_map) // 2):
             for j in range(len(self.chessboard_map[0])):
-                self.chessboard_map[i][j], self.chessboard_map[9 - i][8 - j] = self.chessboard_map[9 - i][8 - j], self.chessboard_map[i][j]
+                self.chessboard_map[i][j], self.chessboard_map[9 - i][8 - j] = self.chessboard_map[9 - i][8 - j], \
+                                                                               self.chessboard_map[i][j]
         print()
+
+    def to_integer_map(self):
+        result = [[0 for i in range(MAP_WIDTH)] for j in range(MAP_HEIGHT)]
+        for i in range(MAP_HEIGHT):
+            for j in range(MAP_WIDTH):
+                temp = self.chessboard_map[i][j]
+                value = 0 if not temp else ABBREVIATION_TO_VALUE[temp.all_name]
+                result[i][j] = value
+        return np.array(result)
 
 
 if __name__ == '__main__':
-    x = ChinaChessBoard(None)
-    x.print_visible_string()
-    x.flip_up_down_and_left_right()
-    x.print_visible_string()
+    # x = ChinaChessBoard(None)
+    # x.print_visible_string()
+    # y = x.to_integer_map()
+    # print(y)
+    # x.flip_up_down_and_left_right()
+    # x.print_visible_string()
+    s = (1,2,3)
+    s += (5,)
+    print(s)

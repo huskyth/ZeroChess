@@ -1,7 +1,11 @@
+import os
+
 from china_chess.algorithm.china_chess_board import ChinaChessBoard
 from reader_pgn import *
 from china_chess.constant import *
 from file_tool import *
+
+import numpy as np
 
 
 class PGNParser:
@@ -180,15 +184,34 @@ class PGNParser:
         print(GetEncodingSheme(path), path)
         y = PGNReader.read_from_pgn(path)
         b = ChinaChessBoard(None)
-        episode = []
-        current_player = 'r'
+        data = []
+        result_value = None
+        for yi in y:
+            if yi in PGNReader.RESULT_STRING_LIST:
+                result_value = yi
+                break
+            if yi[1] in PGNReader.RESULT_STRING_LIST:
+                result_value = yi[1]
+                break
+        if result_value == '1-0':
+            winner = RED_STRING
+        elif result_value == '0-1':
+            winner = BLACK_STRING
+        else:
+            winner = ''
+
         for yi in y:
             if yi in PGNReader.RESULT_STRING_LIST:
                 print(yi)
                 b.print_visible_string()
                 break
-            row, col, end_row, end_col, build_pi = PGNParser.parse(yi[0], b, 'r')
-
+            row, col, end_row, end_col, build_pi = PGNParser.parse(yi[0], b, RED_STRING)
+            if not winner:
+                value = 0
+            else:
+                value = 1 if winner == RED_STRING else -1
+            temp = (b.to_integer_map(), build_pi, value)
+            data.append(temp)
             b.move_chess(row, col, end_row, end_col)
 
             b.print_visible_string()
@@ -197,10 +220,16 @@ class PGNParser:
                 print(yi[1])
                 b.print_visible_string()
                 break
-            row, col, end_row, end_col, build_pi = PGNParser.parse(yi[1], b, 'b')
+            row, col, end_row, end_col, build_pi = PGNParser.parse(yi[1], b, BLACK_STRING)
+            if not winner:
+                value = 0
+            else:
+                value = 1 if winner == BLACK_STRING else -1
+            temp = (b.to_integer_map(), build_pi, value)
+            data.append(temp)
             b.move_chess(row, col, end_row, end_col)
             b.flip_up_down_and_left_right()
-        print()
+        write(TRAIN_DATASET_PATH / (path.split(os.sep)[-1].split('.')[0] + '.examples'), data)
 
 
 if __name__ == '__main__':
