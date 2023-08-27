@@ -45,8 +45,8 @@ class ChinaChessGame(Game):
         if len(legalMoves) == 0:
             raise Exception("No legal moves")
 
-        for x, y in legalMoves:
-            valids[self.width * x + y] = 1
+        for move in legalMoves:
+            valids[b.row_column_to_algorithm_idx(*move)] = 1
         return np.array(valids)
 
     def getGameEnded(self, board, player):

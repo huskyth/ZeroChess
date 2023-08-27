@@ -60,6 +60,4 @@ class PolicyAdapter:
             if max_move_p < pi[idx]:
                 max_move_string = move_temp
                 max_move_p = pi[idx]
-        if max_move_string is None:
-            print()
         return self._parse_move(max_move_string)

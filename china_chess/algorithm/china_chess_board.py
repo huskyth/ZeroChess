@@ -15,7 +15,8 @@ class ChinaChessBoard(ChessBoard):
         legal_moves = []
         for i in range(len(chess_list)):
             dot_list = self.get_put_down_postion(chess_list[i])
-            legal_moves.append(dot_list)
+            for dot in dot_list:
+                legal_moves.append((chess_list[i].row, chess_list[i].col, *dot))
         return legal_moves
 
     def algorithm_idx_to_row_column(self, idx, player):
@@ -33,12 +34,15 @@ class ChinaChessBoard(ChessBoard):
 
         return row, col, new_row, new_col
 
+    def row_column_to_algorithm_idx(self, row, col, new_row, new_col):
+        string = LETTERS[col] + NUMBERS[9 - row] + LETTERS[new_col] + NUMBERS[9 - new_row]
+        return LABELS_TO_INDEX[string]
+
     def flip_up_down_and_left_right(self):
         for i in range(len(self.chessboard_map) // 2):
             for j in range(len(self.chessboard_map[0])):
                 self.chessboard_map[i][j], self.chessboard_map[9 - i][8 - j] = self.chessboard_map[9 - i][8 - j], \
                                                                                self.chessboard_map[i][j]
-        print()
 
     def to_integer_map(self):
         result = [[0 for i in range(MAP_WIDTH)] for j in range(MAP_HEIGHT)]

@@ -268,7 +268,6 @@ class ChessBoard(object):
                 show.append(abbreviation_to_chinese[temp])
             print("".join(show))
             result.append("".join(show) + "\n")
-        print()
         return result
 
     def get_chess(self):
