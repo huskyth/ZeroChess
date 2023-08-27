@@ -3,7 +3,7 @@ import logging
 import coloredlogs
 
 from Coach import Coach
-from othello.OthelloGame import OthelloGame as Game
+from china_chess.algorithm.china_chese_game import *
 from othello.pytorch.NNet import NNetWrapper as nn
 from utils import *
 
@@ -31,11 +31,11 @@ args = dotdict({
 
 
 def main():
-    log.info('Loading %s...', Game.__name__)
-    g = Game(6)
+    log.info('Loading %s...', ChinaChessGame.__name__)
+    g = ChinaChessGame()
 
     log.info('Loading %s...', nn.__name__)
-    nnet = nn(g)
+    nnet = nn()
 
     if args.load_model:
         log.info('Loading checkpoint "%s/%s"...', args.load_folder_file[0], args.load_folder_file[1])

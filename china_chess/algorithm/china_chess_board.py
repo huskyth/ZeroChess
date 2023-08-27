@@ -18,6 +18,21 @@ class ChinaChessBoard(ChessBoard):
             legal_moves.append(dot_list)
         return legal_moves
 
+    def algorithm_idx_to_row_column(self, idx, player):
+        string = LABELS[idx]
+        if player == 1:
+            col = LETTERS_TO_IND[string[0]]
+            row = 9 - NUMBERS_TO_IND[string[1]]
+            new_col = LETTERS_TO_IND[string[2]]
+            new_row = 9 - NUMBERS_TO_IND[string[3]]
+        else:
+            col = 8 - LETTERS_TO_IND[string[0]]
+            row = NUMBERS_TO_IND[string[1]]
+            new_col = 8 - LETTERS_TO_IND[string[2]]
+            new_row = NUMBERS_TO_IND[string[3]]
+
+        return row, col, new_row, new_col
+
     def flip_up_down_and_left_right(self):
         for i in range(len(self.chessboard_map) // 2):
             for j in range(len(self.chessboard_map[0])):
@@ -33,6 +48,19 @@ class ChinaChessBoard(ChessBoard):
                 value = 0 if not temp else ABBREVIATION_TO_VALUE[temp.all_name]
                 result[i][j] = value
         return np.array(result)
+
+    def to_chess_map(self, board):
+        for i in range(10):
+            for j in range(9):
+                if not board[i][j]:
+                    self.chessboard_map[i][j] = None
+                else:
+                    self.chessboard_map[i][j] = Chess(None, VALUE_TO_ABBREVIATION[board[i][j]], i, j)
+
+    def move_chess(self, old_row, old_col, new_row, new_col):
+        self.chessboard_map[new_row][new_col] = self.chessboard_map[old_row][old_col]
+        self.chessboard_map[new_row][new_col].update_position(new_row, new_col)
+        self.chessboard_map[old_row][old_col] = None
 
 
 if __name__ == '__main__':

@@ -32,7 +32,9 @@ for i, x in enumerate(LETTERS):
     LETTERS_TO_IND[x] = i
 
 NUMBERS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-
+NUMBERS_TO_IND = {}
+for i, x in enumerate(NUMBERS):
+    NUMBERS_TO_IND[x] = i
 ABBREVIATION_TO_VALUE = {
     "b_c": -1, "b_m": -2, "b_x": -3, "b_s": -4, "b_j": -5,
     "b_p": -6,
@@ -42,6 +44,10 @@ ABBREVIATION_TO_VALUE = {
     "r_c": 1, "r_m": 2, "r_x": 3, "r_s": 4, "r_j": 5,
     "": 0
 }
+
+VALUE_TO_ABBREVIATION = {}
+for key in ABBREVIATION_TO_VALUE:
+    VALUE_TO_ABBREVIATION[ABBREVIATION_TO_VALUE[key]] = key
 
 NAME_TO_ENGLISH_CHAR = {
     '相': 'r_x',
