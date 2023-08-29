@@ -33,7 +33,6 @@ class ChinaChessGame(Game):
         return b.to_integer_map(), -player
 
     def getValidMoves(self, board, player):
-        # TODO://
         # return a fixed size binary vector
         valids = [0] * self.getActionSize()
 

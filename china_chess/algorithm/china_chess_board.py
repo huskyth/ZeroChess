@@ -61,6 +61,16 @@ class ChinaChessBoard(ChessBoard):
                 else:
                     self.chessboard_map[i][j] = Chess(None, VALUE_TO_ABBREVIATION[board[i][j]], i, j)
 
+    def visual_current_map(self):
+        result = [[0 for i in range(MAP_WIDTH)] for j in range(MAP_HEIGHT)]
+        for i in range(10):
+            for j in range(9):
+                if self.chessboard_map[i][j]:
+                    result[i][j] = self.chessboard_map[i][j].all_name
+                else:
+                    result[i][j] = '---'
+        return result
+
     def move_chess(self, old_row, old_col, new_row, new_col):
         self.chessboard_map[new_row][new_col] = self.chessboard_map[old_row][old_col]
         self.chessboard_map[new_row][new_col].update_position(new_row, new_col)

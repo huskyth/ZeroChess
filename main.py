@@ -55,4 +55,22 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    def test(n):
+        i = 0
+        while i < n:
+            print('before yield i = {}'.format(i))
+            yield i
+            print('after yield i = {}'.format(i))
+            i += 1
+
+
+    def test_main():
+        for x in test(7):
+            print(' x = {}'.format(x))
+            if x == 4:
+                return x
+
+
+    y = test_main()
+    print(y)
