@@ -21,17 +21,10 @@ class ChinaChessBoard(ChessBoard):
 
     def algorithm_idx_to_row_column(self, idx, player):
         string = LABELS[idx]
-        if player == 1:
-            col = LETTERS_TO_IND[string[0]]
-            row = 9 - NUMBERS_TO_IND[string[1]]
-            new_col = LETTERS_TO_IND[string[2]]
-            new_row = 9 - NUMBERS_TO_IND[string[3]]
-        else:
-            col = 8 - LETTERS_TO_IND[string[0]]
-            row = NUMBERS_TO_IND[string[1]]
-            new_col = 8 - LETTERS_TO_IND[string[2]]
-            new_row = NUMBERS_TO_IND[string[3]]
-
+        col = LETTERS_TO_IND[string[0]]
+        row = 9 - NUMBERS_TO_IND[string[1]]
+        new_col = LETTERS_TO_IND[string[2]]
+        new_row = 9 - NUMBERS_TO_IND[string[3]]
         return row, col, new_row, new_col
 
     def row_column_to_algorithm_idx(self, row, col, new_row, new_col):

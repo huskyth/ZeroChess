@@ -29,7 +29,6 @@ class ChinaChessGame(Game):
         b = ChinaChessBoard(None)
         b.to_chess_map(board)
         b.move_chess(*b.algorithm_idx_to_row_column(action, player))
-        b.flip_up_down_and_left_right()
         return b.to_integer_map(), -player
 
     def getValidMoves(self, board, player):
@@ -58,10 +57,6 @@ class ChinaChessGame(Game):
 
     def getCanonicalForm(self, board, player):
         # return state if player==1, else return -state if player==-1
-        if player == 1:
-            return board
-        else:
-            _flip_up_down_and_left_right
         return player * board
 
     def getSymmetries(self, board, pi):
