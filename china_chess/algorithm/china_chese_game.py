@@ -32,10 +32,14 @@ class ChinaChessGame(Game):
         '''
         b = ChinaChessBoard(None)
         b.to_chess_map(board)
+        need_transfer = False
         if self._position_r_j(b.chessboard_map) and player == 1:
+            need_transfer = True
             b = ChinaChessBoard(None)
             b.to_chess_map(board * -1)
         b.move_chess(*b.algorithm_idx_to_row_column(action))
+        if need_transfer:
+            return b.to_integer_map() * -1, -player
         return b.to_integer_map(), -player
 
     def _position_r_j(self, chessboard_map):

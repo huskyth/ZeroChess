@@ -17,7 +17,7 @@ class PolicyAdapter:
         self.pmcts = MCTS(self.game, self.net, args)
 
     def _parse_move(self, string):
-        return int(string[1]), 8 - LETTERS_TO_IND[string[0]], int(string[3]), 8 - LETTERS_TO_IND[string[2]],
+        return 9 - int(string[1]), LETTERS_TO_IND[string[0]], 9 - int(string[3]), LETTERS_TO_IND[string[2]],
 
     def _parse_to_move_idx_from_game_ind(self, row, column, end_row, end_column):
         return LETTERS[8 - column] + NUMBERS[row] + LETTERS[8 - end_column] + NUMBERS[end_row]
