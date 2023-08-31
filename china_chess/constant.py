@@ -26,6 +26,10 @@ DATASET_PATH = Path(__file__).parent / "dataset"
 TRAIN_DATASET_PATH = Path(__file__).parent / "train_data"
 SUMMARY_PATH = Path(__file__).parent / "summary"
 MODEL_PATH = Path(__file__).parent / "algorithm" / "checkpoint"
+
+IMAGE_PATH = Path(__file__).parent
+
+
 LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
 LETTERS_TO_IND = {}
 for i, x in enumerate(LETTERS):

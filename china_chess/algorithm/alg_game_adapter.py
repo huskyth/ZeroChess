@@ -25,14 +25,14 @@ class PolicyAdapter:
     def action_by_mcst(self, board):
         return np.argmax(self.pmcts.getActionProb(board, temp=0))
 
-    def get_next_policy(self, original_game_board_with_chess, current_player, can_move_list):
-        if not can_move_list:
-            return None, None, None, None
+    def get_next_policy(self, original_game_board_with_chess, c_player):
 
         ccb = ChinaChessBoard(None)
-        ccb.chessboard_map = copy.deepcopy(original_game_board_with_chess)
+        ccb.deepcopy(original_game_board_with_chess)
 
         board = ccb.to_integer_map()
+        c_player = 1 if c_player == 'r' else -1
+        board = self.game.getCanonicalForm(board, c_player)
 
         idx = self.action_by_mcst(board)
 

@@ -8,6 +8,7 @@ class ChinaChessGame(Game):
 
     def __init__(self):
         self.width, self.height = 9, 10
+        self.round_time = 0
 
     def stringRepresentation(self, board):
         return board.tostring()
@@ -26,17 +27,39 @@ class ChinaChessGame(Game):
     def getNextState(self, board, player, action):
         # if player takes action on board, return next (board,player)
         # action must be a valid move
+        '''
+        TODO:可能有问题
+        '''
         b = ChinaChessBoard(None)
         b.to_chess_map(board)
-        b.move_chess(*b.algorithm_idx_to_row_column(action, player))
+        if self._position_r_j(b.chessboard_map) and player == 1:
+            b = ChinaChessBoard(None)
+            b.to_chess_map(board * -1)
+        b.move_chess(*b.algorithm_idx_to_row_column(action))
         return b.to_integer_map(), -player
 
+    def _position_r_j(self, chessboard_map):
+        for x in range(10):
+            for y in range(9):
+                if chessboard_map[x][y] and chessboard_map[x][y].all_name == 'r_j':
+                    return x <= 4
+
     def getValidMoves(self, board, player):
+        '''
+        TODO:可能会有问题
+        '''
+        b = ChinaChessBoard(None)
+        b.to_chess_map(board)
+        if self._position_r_j(b.chessboard_map):
+            assert player == 1
+            board_temp = board * -1
+            b = ChinaChessBoard(None)
+            b.to_chess_map(board_temp)
+            player = 'b'
+
         # return a fixed size binary vector
         valids = [0] * self.getActionSize()
 
-        b = ChinaChessBoard(None)
-        b.to_chess_map(board)
         player = 'r' if player == 1 else 'b'
         legalMoves = b.get_legal_moves(player)
 
@@ -44,7 +67,8 @@ class ChinaChessGame(Game):
             raise Exception("No legal moves")
 
         for move in legalMoves:
-            valids[b.row_column_to_algorithm_idx(*move)] = 1
+            temp = b.row_column_to_algorithm_idx(*move)
+            valids[temp] = 1
         return np.array(valids)
 
     def getGameEnded(self, board, player):

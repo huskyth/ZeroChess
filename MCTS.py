@@ -6,7 +6,6 @@ import numpy as np
 EPS = 1e-8
 
 log = logging.getLogger(__name__)
-from china_chess.constant import *
 
 class MCTS():
     """

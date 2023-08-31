@@ -55,7 +55,7 @@ def main():
 
 
 if __name__ == "__main__":
-    # main()
+    main()
     def test(n):
         i = 0
         while i < n:

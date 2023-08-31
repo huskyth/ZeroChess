@@ -1,7 +1,8 @@
-from china_chess.policy_main_player_and_machine import *
 import numpy as np
+
+from china_chess.chess import Chess
+from china_chess.china_board import ChessBoard
 from china_chess.constant import *
-import copy
 
 
 class ChinaChessBoard(ChessBoard):
@@ -9,17 +10,28 @@ class ChinaChessBoard(ChessBoard):
     def __init__(self, screen):
         super().__init__(screen)
 
+    def deepcopy(self, chess_map):
+        for i in range(10):
+            for j in range(9):
+                if not chess_map[i][j]:
+                    self.chessboard_map[i][j] = None
+                else:
+                    self.chessboard_map[i][j] = chess_map[i][j].copy()
+
+
+
     def get_legal_moves(self, current_player):
         chess_list = self.get_chess()
         chess_list = [c for c in chess_list if c.team == current_player]
         legal_moves = []
+
         for i in range(len(chess_list)):
             dot_list = self.get_put_down_postion(chess_list[i])
             for dot in dot_list:
                 legal_moves.append((chess_list[i].row, chess_list[i].col, *dot))
         return legal_moves
 
-    def algorithm_idx_to_row_column(self, idx, player):
+    def algorithm_idx_to_row_column(self, idx):
         string = LABELS[idx]
         col = LETTERS_TO_IND[string[0]]
         row = 9 - NUMBERS_TO_IND[string[1]]
