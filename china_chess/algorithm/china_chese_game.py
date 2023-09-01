@@ -59,21 +59,33 @@ class ChinaChessGame(Game):
             board_temp = board * -1
             b = ChinaChessBoard(None)
             b.to_chess_map(board_temp)
-            player = 'b'
+            player = '-1'
 
         # return a fixed size binary vector
         valids = [0] * self.getActionSize()
-
+        assert player in [1, -1]
         player = 'r' if player == 1 else 'b'
         legalMoves = b.get_legal_moves(player)
 
         if len(legalMoves) == 0:
             raise Exception("No legal moves")
-
+        valid_copy_idx = []
         for move in legalMoves:
             temp = b.row_column_to_algorithm_idx(*move)
-            valids[temp] = 1
+            if self._filter(b.to_integer_map(), move[2], move[3], player):
+                valids[temp] = 1
+            valid_copy_idx.append(temp)
+        if not all(valids):
+            '''
+            可能产生问题'''
+            for t in valid_copy_idx:
+                valids[t] = 1
         return np.array(valids)
+
+    def _filter(self, board, row, col, current_player):
+        assert current_player in ['r', 'b']
+        current_player = 1 if current_player == 'r' else -1
+        return board[row][col] * current_player < 0
 
     def getGameEnded(self, board, player):
         # return 0 if not ended, 1 if player 1 won, -1 if player 1 lost
