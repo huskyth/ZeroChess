@@ -6,6 +6,7 @@ import numpy as np
 EPS = 1e-8
 
 log = logging.getLogger(__name__)
+from china_chess.algorithm.china_chess_board import *
 
 
 class MCTS:
@@ -35,7 +36,7 @@ class MCTS:
                    proportional to Nsa[(s,a)]**(1./temp)
         """
         for i in range(self.args.numMCTSSims):
-            self.search(canonicalBoard)
+            self.search(canonicalBoard, i)
 
         s = self.game.stringRepresentation(canonicalBoard)
         counts = [self.Nsa[(s, a)] if (s, a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
@@ -52,7 +53,7 @@ class MCTS:
         probs = [x / counts_sum for x in counts]
         return probs
 
-    def search(self, canonicalBoard):
+    def search(self, canonicalBoard, i):
         """
         This function performs one iteration of MCTS. It is recursively called
         till a leaf node is found. The action chosen at each node is one that
@@ -119,10 +120,18 @@ class MCTS:
                     best_act = a
 
         a = best_act
+        ChinaChessBoard.print_visible_string_from_integer_map(canonicalBoard,
+                                                              '第{}次递归执行下次action_前_的状态如下:action为{}'.format(
+                                                                  i, a))
         next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
+        ChinaChessBoard.print_visible_string_from_integer_map(next_s,
+                                                              '第{}次递归执行下次action_后_的状态如下:'.format(i))
         next_s = self.game.getCanonicalForm(next_s, next_player)
+        ChinaChessBoard.print_visible_string_from_integer_map(next_s,
+                                                              '第{}次递归执行下次action后getCanonicalForm的状态如下:'.format(
+                                                                  i))
 
-        v = self.search(next_s)
+        v = self.search(next_s, i)
 
         if (s, a) in self.Qsa:
             self.Qsa[(s, a)] = (self.Nsa[(s, a)] * self.Qsa[(s, a)] + v) / (self.Nsa[(s, a)] + 1)

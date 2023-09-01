@@ -57,12 +57,13 @@ class ChinaChessBoard(ChessBoard):
                 result[i][j] = value
         return np.array(result)
 
-    def print_visible_string_from_integer_map(self, integer_map, is_write):
+    @staticmethod
+    def print_visible_string_from_integer_map(integer_map, is_write=True, title=''):
         b = ChinaChessBoard(None)
         b.to_chess_map(integer_map)
         res = b.print_visible_string()
         if is_write:
-            write_line("map_log.txt", "".join(res))
+            write_line("map_log.txt", "".join(res), title)
         return res
 
     def to_chess_map(self, board):

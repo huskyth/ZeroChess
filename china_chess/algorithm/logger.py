@@ -28,10 +28,10 @@ type2fore = {
 time2event = {}
 
 
-def log(log_type, msg, is_in_file=False, file_name='logger.txt'):
+def log(log_type, msg, is_in_file=False, file_name='logger.txt', title=''):
     print("\033[1;" + type2fore[log_type] + ";40m{:15s}".format(type2name[log_type]) + msg)
     if is_in_file:
-        write_line(file_name, msg)
+        write_line(file_name, msg, title)
 
 
 if __name__ == '__main__':
