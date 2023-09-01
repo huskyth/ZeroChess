@@ -28,6 +28,7 @@ SUMMARY_PATH = Path(__file__).parent / "summary"
 MODEL_PATH = Path(__file__).parent / "algorithm" / "checkpoint"
 
 IMAGE_PATH = Path(__file__).parent
+LOGGER_PATH = Path(__file__).parent / "logger"
 
 
 LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
