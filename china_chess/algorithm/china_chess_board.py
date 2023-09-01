@@ -1,5 +1,6 @@
 import numpy as np
 
+from china_chess.algorithm.file_writer import write_line
 from china_chess.chess import Chess
 from china_chess.china_board import ChessBoard
 from china_chess.constant import *
@@ -17,8 +18,6 @@ class ChinaChessBoard(ChessBoard):
                     self.chessboard_map[i][j] = None
                 else:
                     self.chessboard_map[i][j] = chess_map[i][j].copy()
-
-
 
     def get_legal_moves(self, current_player):
         chess_list = self.get_chess()
@@ -47,7 +46,7 @@ class ChinaChessBoard(ChessBoard):
         for i in range(len(self.chessboard_map) // 2):
             for j in range(len(self.chessboard_map[0])):
                 self.chessboard_map[i][j], self.chessboard_map[9 - i][8 - j] = self.chessboard_map[9 - i][8 - j], \
-                                                                               self.chessboard_map[i][j]
+                    self.chessboard_map[i][j]
 
     def to_integer_map(self):
         result = [[0 for i in range(MAP_WIDTH)] for j in range(MAP_HEIGHT)]
@@ -57,6 +56,14 @@ class ChinaChessBoard(ChessBoard):
                 value = 0 if not temp else ABBREVIATION_TO_VALUE[temp.all_name]
                 result[i][j] = value
         return np.array(result)
+
+    def print_visible_string_from_integer_map(self, integer_map, is_write):
+        b = ChinaChessBoard(None)
+        b.to_chess_map(integer_map)
+        res = b.print_visible_string()
+        if is_write:
+            write_line("map_log.txt", "".join(res))
+        return res
 
     def to_chess_map(self, board):
         for i in range(10):
@@ -83,12 +90,6 @@ class ChinaChessBoard(ChessBoard):
 
 
 if __name__ == '__main__':
-    # x = ChinaChessBoard(None)
-    # x.print_visible_string()
-    # y = x.to_integer_map()
-    # print(y)
-    # x.flip_up_down_and_left_right()
-    # x.print_visible_string()
-    s = (1, 2, 3)
-    s += (5,)
-    print(s)
+    x = ChinaChessBoard(None)
+    x.print_visible_string_from_integer_map(x.to_integer_map(), is_write=True)
+    x.print_visible_string_from_integer_map(x.to_integer_map(), is_write=True)
