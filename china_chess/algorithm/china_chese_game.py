@@ -48,6 +48,11 @@ class ChinaChessGame(Game):
                 if chessboard_map[x][y] and chessboard_map[x][y].all_name == 'r_j':
                     return x <= 4
 
+    def _debug_filter(self, board):
+        if -1 in board[1] and -1 in board[2] and 5 in board[1]:
+            return True
+        return False
+
     def getValidMoves(self, board, player):
         '''
         TODO:可能会有问题
@@ -61,21 +66,29 @@ class ChinaChessGame(Game):
             b.to_chess_map(board_temp)
             player = -1
 
+        if self._debug_filter(b.to_integer_map()):
+            print()
         # return a fixed size binary vector
         valids = [0] * self.getActionSize()
         assert player in [1, -1]
         player = 'r' if player == 1 else 'b'
         legalMoves = b.get_legal_moves(player)
 
+        reverse_player = 'r' if player == 'b' else 'b'
+
         if len(legalMoves) == 0:
-            raise Exception("No legal moves")
+            if b.judge_win(reverse_player):
+                print('游戏结束')
+            else:
+                raise Exception("No legal moves")
         valid_copy_idx = []
         for move in legalMoves:
             temp = b.row_column_to_algorithm_idx(*move)
-            if self._filter(b.to_integer_map(), move[2], move[3], player):
+            filter_value = self._filter(b.to_integer_map(), move[2], move[3], player)
+            if filter_value:
                 valids[temp] = 1
             valid_copy_idx.append(temp)
-        if not all(valids):
+        if not any(valids):
             '''
             可能产生问题'''
             for t in valid_copy_idx:
@@ -90,10 +103,23 @@ class ChinaChessGame(Game):
     def getGameEnded(self, board, player):
         # return 0 if not ended, 1 if player 1 won, -1 if player 1 lost
         # player = 1
+        # TODO://解决action = -1的问题待验证
         b = ChinaChessBoard(None)
         b.to_chess_map(board)
+        is_transfer = 1
+        if self._position_r_j(b.chessboard_map):
+            board_temp = board * -1
+            b = ChinaChessBoard(None)
+            b.to_chess_map(board_temp)
+            is_transfer = -1
+
         player = 'r' if player == 1 else 'b'
-        return b.judge_win(player)
+        reverse_player = 'r' if player == 'b' else 'b'
+        if b.judge_win(player):
+            return 1 * is_transfer
+        elif b.judge_win(reverse_player):
+            return -1 * is_transfer
+        return 0
 
     def getCanonicalForm(self, board, player):
         # return state if player==1, else return -state if player==-1

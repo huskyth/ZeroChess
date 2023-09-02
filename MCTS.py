@@ -75,8 +75,7 @@ class MCTS:
 
         s = self.game.stringRepresentation(canonicalBoard)
 
-        if s not in self.Es:
-            self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
+        self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
         if self.Es[s] != 0:
             # terminal node
             return -self.Es[s]
@@ -121,14 +120,14 @@ class MCTS:
 
         a = best_act
         ChinaChessBoard.print_visible_string_from_integer_map(canonicalBoard,
-                                                              '第{}次递归执行下次action_前_的状态如下:action为{}'.format(
+                                                              title='第{}次递归执行下次action_前_的状态如下:action为{}'.format(
                                                                   i, a))
         next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
         ChinaChessBoard.print_visible_string_from_integer_map(next_s,
-                                                              '第{}次递归执行下次action_后_的状态如下:'.format(i))
+                                                              title='第{}次递归执行下次action_后_的状态如下:'.format(i))
         next_s = self.game.getCanonicalForm(next_s, next_player)
         ChinaChessBoard.print_visible_string_from_integer_map(next_s,
-                                                              '第{}次递归执行下次action后getCanonicalForm的状态如下:'.format(
+                                                              title='第{}次递归执行下次action后getCanonicalForm的状态如下:'.format(
                                                                   i))
 
         v = self.search(next_s, i)
@@ -140,6 +139,8 @@ class MCTS:
         else:
             self.Qsa[(s, a)] = v
             self.Nsa[(s, a)] = 1
-
+            ChinaChessBoard.print_visible_string_from_integer_map(canonicalBoard,
+                                                                  title='第{}次递归执行的action为{}:'.format(
+                                                                      i, a))
         self.Ns[s] += 1
         return -v

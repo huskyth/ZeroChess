@@ -187,11 +187,12 @@ class ChessBoard(object):
             # 下方
             if row + 1 <= 9 and not map_[row + 1][col]:  # 如果当前棋子没有被蹩马腿，那么再对这个方向的2个位置进行判断
                 # 左下
-                if row + 2 >= 0 and col - 1 >= 0 and (
+                # TODO://检验线上还有没有问题
+                if row + 2 >= 0 and row + 2 <= 9 and col - 1 >= 0 and (
                         not map_[row + 2][col - 1] or map_[row + 2][col - 1].team != team):
                     put_down_chess_pos.append((row + 2, col - 1))
                 # 右下
-                if row + 2 >= 0 and col + 1 <= 8 and (
+                if row + 2 >= 0 and row + 2 <= 9 and col + 1 <= 8 and (
                         not map_[row + 2][col + 1] or map_[row + 2][col + 1].team != team):
                     put_down_chess_pos.append((row + 2, col + 1))
             # 左方
@@ -372,6 +373,8 @@ class ChessBoard(object):
         print("旧位置：", old_row, old_col, "新位置：", new_row, new_col)
         # 移动位置
         self.chessboard_map[new_row][new_col] = self.chessboard_map[old_row][old_col]
+        if not self.chessboard_map[new_row][new_col]:
+            self.print_visible_string()
         # 修改棋子的属性
         self.chessboard_map[new_row][new_col].update_position(new_row, new_col)
         # 清楚之前位置为None

@@ -23,11 +23,16 @@ class ChinaChessBoard(ChessBoard):
         chess_list = self.get_chess()
         chess_list = [c for c in chess_list if c.team == current_player]
         legal_moves = []
-
+        dot_list_len = []
         for i in range(len(chess_list)):
             dot_list = self.get_put_down_postion(chess_list[i])
+            dot_list_len.append(len(dot_list))
             for dot in dot_list:
                 legal_moves.append((chess_list[i].row, chess_list[i].col, *dot))
+        if not legal_moves:
+            print(len(chess_list), dot_list_len)
+            self.print_visible_string()
+
         return legal_moves
 
     def algorithm_idx_to_row_column(self, idx):
