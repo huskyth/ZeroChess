@@ -8,7 +8,7 @@ from china_chess.constant import *
 
 class ChinaChessBoard(ChessBoard):
 
-    def __init__(self, screen):
+    def __init__(self, screen=None):
         super().__init__(screen)
 
     def deepcopy(self, chess_map):

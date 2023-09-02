@@ -120,15 +120,15 @@ class MCTS:
 
         a = best_act
         ChinaChessBoard.print_visible_string_from_integer_map(canonicalBoard,
-                                                              title='第{}次递归执行下次action_前_的状态如下:action为{}'.format(
-                                                                  i, a))
+                                                              title='第{}次递归执行下次action_前_的状态如下:action为{},{}'.format(
+                                                                  i, a, LABELS[a]))
         next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
-        ChinaChessBoard.print_visible_string_from_integer_map(next_s,
-                                                              title='第{}次递归执行下次action_后_的状态如下:'.format(i))
+        # ChinaChessBoard.print_visible_string_from_integer_map(next_s,
+        #                                                       title='第{}次递归执行下次action_后_的状态如下:'.format(i))
         next_s = self.game.getCanonicalForm(next_s, next_player)
-        ChinaChessBoard.print_visible_string_from_integer_map(next_s,
-                                                              title='第{}次递归执行下次action后getCanonicalForm的状态如下:'.format(
-                                                                  i))
+        # ChinaChessBoard.print_visible_string_from_integer_map(next_s,
+        #                                                       title='第{}次递归执行下次action后getCanonicalForm的状态如下:'.format(
+        #                                                           i))
 
         v = self.search(next_s, i)
 

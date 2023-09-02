@@ -85,7 +85,7 @@ class ChinaChessGame(Game):
         for move in legalMoves:
             temp = b.row_column_to_algorithm_idx(*move)
             filter_value = self._filter(b.to_integer_map(), move[2], move[3], player)
-            if filter_value:
+            if True:
                 valids[temp] = 1
             valid_copy_idx.append(temp)
         if not any(valids):

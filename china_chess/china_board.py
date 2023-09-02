@@ -85,14 +85,15 @@ class ChessBoard(object):
                 else:
                     self.chessboard_map[row][col] = None
 
-    def print_visible_string(self):
+    def print_visible_string(self, is_print_screen=False):
         result = []
         for line in self.chessboard_map:
             show = []
             for item in line:
                 temp = "" if not item else item.all_name
                 show.append(abbreviation_to_chinese[temp])
-            print("".join(show))
+            if is_print_screen:
+                print("".join(show))
             result.append("".join(show) + "\n")
         return result
 
