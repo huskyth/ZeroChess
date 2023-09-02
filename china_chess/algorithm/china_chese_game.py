@@ -59,7 +59,7 @@ class ChinaChessGame(Game):
             board_temp = board * -1
             b = ChinaChessBoard(None)
             b.to_chess_map(board_temp)
-            player = '-1'
+            player = -1
 
         # return a fixed size binary vector
         valids = [0] * self.getActionSize()
