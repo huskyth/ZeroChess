@@ -9,7 +9,6 @@ class ChinaChessGame(Game):
     def __init__(self):
         self.width, self.height = 9, 10
         self.round_time = 0
-        self.continue_not_eat_chess_number = 0
 
     def stringRepresentation(self, board):
         return board.tostring()
@@ -44,8 +43,7 @@ class ChinaChessGame(Game):
             need_transfer = True
             b = ChinaChessBoard(None)
             b.to_chess_map(board * -1)
-        is_eat = b.move_chess(*b.algorithm_idx_to_row_column(action))
-        self._acc_logic(is_eat)
+        b.move_chess(*b.algorithm_idx_to_row_column(action))
         if need_transfer:
             return b.to_integer_map() * -1, -player
         return b.to_integer_map(), -player
@@ -124,17 +122,11 @@ class ChinaChessGame(Game):
         player = 'r' if player == 1 else 'b'
         reverse_player = 'r' if player == 'b' else 'b'
         if b.judge_win(player):
-            self.continue_not_eat_chess_number = 0
             return True, 1 * is_transfer
         elif b.judge_win(reverse_player):
-            self.continue_not_eat_chess_number = 0
             return True, -1 * is_transfer
         else:
-            if self.continue_not_eat_chess_number >= 60:
-                self.continue_not_eat_chess_number = 0
-                return True, 0
-            else:
-                return False, 0
+            return False, 0
 
     def getCanonicalForm(self, board, player):
         # return state if player==1, else return -state if player==-1

@@ -13,12 +13,12 @@ coloredlogs.install(level='INFO')  # Change this to DEBUG to see more info.
 
 args = dotdict({
     'numIters': 1000,
-    'numEps': 2,  # Number of complete self-play games to simulate during a new iteration.
+    'numEps': 20,  # Number of complete self-play games to simulate during a new iteration.
     'tempThreshold': 45,  #
     'updateThreshold': 0.6,
     # During arena playoff, new neural net will be accepted if threshold or more of games are won.
     'maxlenOfQueue': 200000,  # Number of game examples to train the neural networks.
-    'numMCTSSims': 25,  # Number of games moves for MCTS to simulate.
+    'numMCTSSims': 100,  # Number of games moves for MCTS to simulate.
     'arenaCompare': 40,  # Number of games to play during arena play to determine if new net will be accepted.
     'cpuct': 1,
 
@@ -56,21 +56,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    def test(n):
-        i = 0
-        while i < n:
-            print('before yield i = {}'.format(i))
-            yield i
-            print('after yield i = {}'.format(i))
-            i += 1
-
-
-    def test_main():
-        for x in test(7):
-            print(' x = {}'.format(x))
-            if x == 4:
-                return x
-
-
-    y = test_main()
-    print(y)

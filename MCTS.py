@@ -1,7 +1,8 @@
 import logging
 import math
 
-import numpy as np
+import heapq as hq
+import random
 
 EPS = 1e-8
 
@@ -53,6 +54,14 @@ class MCTS:
         probs = [x / counts_sum for x in counts]
         return probs
 
+    def _top_k(self, data_list, number):
+        y = sorted(data_list, key=lambda x: x[0], reverse=True)
+        if len(y) < number:
+            return y[0][1]
+        y = random.choices(y[:number])[0][1]
+
+        return y
+
     def search(self, canonicalBoard, i):
         """
         This function performs one iteration of MCTS. It is recursively called
@@ -74,8 +83,10 @@ class MCTS:
         """
 
         s = self.game.stringRepresentation(canonicalBoard)
-
-        is_end, self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
+        if s not in self.Es:
+            is_end, self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
+        else:
+            is_end = self.Es[s] != 0
         if is_end:
             # terminal node
             return -self.Es[s]
@@ -104,7 +115,7 @@ class MCTS:
         valids = self.Vs[s]
         cur_best = -float('inf')
         best_act = -1
-
+        temp_list = []
         # pick the action with the highest upper confidence bound
         for a in range(self.game.getActionSize()):
             if valids[a]:
@@ -114,14 +125,17 @@ class MCTS:
                 else:
                     u = self.args.cpuct * self.Ps[s][a] * math.sqrt(self.Ns[s] + EPS)  # Q = 0 ?
 
+                temp_list.append((u, a))
                 if u > cur_best:
                     cur_best = u
                     best_act = a
 
         a = best_act
+        a = self._top_k(temp_list, 3)
         ChinaChessBoard.print_visible_string_from_integer_map(canonicalBoard,
                                                               title='第{}次递归执行下次action_前_的状态如下:action为{},{}'.format(
-                                                                  i, a, LABELS[a]))
+                                                                  i, a, LABELS[a]
+                                                              ))
         next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
         # ChinaChessBoard.print_visible_string_from_integer_map(next_s,
         #                                                       title='第{}次递归执行下次action_后_的状态如下:'.format(i))
