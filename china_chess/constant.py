@@ -30,7 +30,7 @@ MODEL_PATH = Path(__file__).parent / "algorithm" / "checkpoint"
 IMAGE_PATH = Path(__file__).parent
 LOGGER_PATH = Path(__file__).parent / "logger"
 
-
+MAX_NOT_EAR_NUMBER = 60
 LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
 LETTERS_TO_IND = {}
 for i, x in enumerate(LETTERS):
@@ -111,5 +111,3 @@ def chess_from_chinese_to_english_char(chess_chinese_name, cur_player):
     if chess_chinese_name in PAO_MA_CHE_AFTER_ENGLISH:
         return cur_player + PAO_MA_CHE_AFTER_ENGLISH[chess_chinese_name]
     return NAME_TO_ENGLISH_CHAR[chess_chinese_name]
-
-

@@ -90,9 +90,13 @@ class ChinaChessBoard(ChessBoard):
         return result
 
     def move_chess(self, old_row, old_col, new_row, new_col):
+        result = 0
+        if self.chessboard_map[new_row][new_col]:
+            result = 1
         self.chessboard_map[new_row][new_col] = self.chessboard_map[old_row][old_col]
         self.chessboard_map[new_row][new_col].update_position(new_row, new_col)
         self.chessboard_map[old_row][old_col] = None
+        return result
 
 
 if __name__ == '__main__':
