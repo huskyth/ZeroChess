@@ -145,6 +145,10 @@ class Dot(object):
                 return dot
 
 
+def start_from_integer_map(integer_map):
+    pass
+
+
 def main():
     policy = PolicyAdapter()
     # 初始化pygame

@@ -37,7 +37,7 @@ class MCTS:
                    proportional to Nsa[(s,a)]**(1./temp)
         """
         for i in range(self.args.numMCTSSims):
-            self.search(canonicalBoard, i, [], 0)
+            self.search(canonicalBoard, i, [], 0, 0)
 
         s = self.game.stringRepresentation(canonicalBoard)
         counts = [self.Nsa[(s, a)] if (s, a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
@@ -71,7 +71,7 @@ class MCTS:
                 return True
         return False
 
-    def search(self, canonicalBoard, i, continue_steps, is_eat_param):
+    def search(self, canonicalBoard, i, continue_steps, is_eat_param, times):
         """
         This function performs one iteration of MCTS. It is recursively called
         till a leaf node is found. The action chosen at each node is one that
@@ -92,14 +92,15 @@ class MCTS:
         """
         if is_eat_param >= 60:
             ChinaChessBoard.print_visible_string_from_integer_map(canonicalBoard,
-                                                                  title='第{}次递归，没有吃子数目为{}，和棋的状态如下:'.format(
-                                                                      i, is_eat_param
+                                                                  title='第{}次递归，没有吃子数目为{}，和棋的状态如下,递归深度为{}:'.format(
+                                                                      i, is_eat_param, times
                                                                   ))
             return 0
 
         if self._is_draw(continue_steps):
             ChinaChessBoard.print_visible_string_from_integer_map(canonicalBoard,
-                                                                  title='第{}次递归，判和棋的状态如下:'.format(i))
+                                                                  title='第{}次递归，判和棋的状态如下,递归深度为{}:'.format(
+                                                                      i, times))
             return 0
 
         s = self.game.stringRepresentation(canonicalBoard)
@@ -109,8 +110,8 @@ class MCTS:
         if self.Es[s][0]:
             # terminal node
             ChinaChessBoard.print_visible_string_from_integer_map(canonicalBoard,
-                                                                  title='第{}次递归，分胜负的状态如下:'.format(
-                                                                      i
+                                                                  title='第{}次递归，分胜负的状态如下,递归深度为{}:'.format(
+                                                                      i, times
                                                                   ))
             return -self.Es[s][1]
 
@@ -156,20 +157,20 @@ class MCTS:
         a = best_act
         # a = self._top_k(temp_list, 2)
         ChinaChessBoard.print_visible_string_from_integer_map(canonicalBoard,
-                                                              title='第{}次递归执行下次action_前_的状态如下:action为{},{}'.format(
-                                                                  i, a, LABELS[a]
+                                                              title='第{}次递归执行下次action_前_的状态如下:action为{},{},递归深度为{}'.format(
+                                                                  i, a, LABELS[a], times
                                                               ))
         next_s, next_player, is_eat = self.game.getNextState(canonicalBoard, 1, a)
         next_s = self.game.getCanonicalForm(next_s, next_player)
 
-        if len(continue_steps == 12):
+        if len(continue_steps) == 12:
             del continue_steps[0]
         continue_steps.append(a)
         if is_eat:
             is_eat_param = 0
         else:
             is_eat_param += 1
-        v = self.search(next_s, i, continue_steps, is_eat_param)
+        v = self.search(next_s, i, continue_steps, is_eat_param, times + 1)
 
         if (s, a) in self.Qsa:
             self.Qsa[(s, a)] = (self.Nsa[(s, a)] * self.Qsa[(s, a)] + v) / (self.Nsa[(s, a)] + 1)
@@ -179,7 +180,7 @@ class MCTS:
             self.Qsa[(s, a)] = v
             self.Nsa[(s, a)] = 1
             ChinaChessBoard.print_visible_string_from_integer_map(canonicalBoard,
-                                                                  title='第{}次递归执行的action为{}:'.format(
-                                                                      i, a))
+                                                                  title='第{}次递归执行的action为{},递归深度为{}:'.format(
+                                                                      i, a, times))
         self.Ns[s] += 1
         return -v
