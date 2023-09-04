@@ -176,6 +176,7 @@ class MainEntrance:
     def __init__(self):
         self.policy = PolicyAdapter()
         self._init_pygame()
+        self._init_game()
 
     def _select_a_chess(self):
         self.clicked_row, self.clicked_col = None, None
@@ -190,12 +191,14 @@ class MainEntrance:
             put_down_chess_pos = self.chessboard.get_put_down_postion(clicked_chess)
             # 根据当前被点击的棋子创建可以落子的对象
             Dot.create_nums_dot(self.screen, put_down_chess_pos)
+            return True
+        return False
 
     def _move_a_chess(self):
         clicked_dot = Dot.click()
 
         if clicked_dot:
-            self.chessboard.move_chess(clicked_dot.row,
+            self.chessboard.move_chess_old(clicked_dot.row,
                                        clicked_dot.col, self.game.get_player(), self.clicked_row, self.clicked_col)
             # 清理「点击对象」、「可落子位置对象」
             Dot.clean_last_position()
@@ -214,13 +217,12 @@ class MainEntrance:
         return False
 
     def _step_by_user(self):
-        self._select_a_chess()
         result = self._move_a_chess()
-
-        # 落子之后，交换走棋方
-        self.game.exchange()
-
-        return result
+        if result:
+            return True
+        else:
+            self._select_a_chess()
+            return False
 
     def _step_by_policy(self, player):
         old_row, old_col, new_row, new_col = self.policy.get_next_policy(self.chessboard.chessboard_map, player)
@@ -229,7 +231,7 @@ class MainEntrance:
             self.game.set_win('r')
             return True
 
-        self.chessboard.move_chess(new_row, new_col, self.game.get_player(), old_row, old_col)
+        self.chessboard.move_chess_old(new_row, new_col, self.game.get_player(), old_row, old_col)
         # 检测落子后，是否产生了"将军"功能
         if self.chessboard.judge_attack_general(self.game.get_player()):
             print("将军....")
@@ -243,28 +245,27 @@ class MainEntrance:
 
     def _black_step(self):
         self._step_by_policy('b')
-        # 落子之后，交换走棋方
-        self.game.exchange()
+
         # 退出for，以便不让本次的鼠标点击串联到点击棋子
         return True
 
     def _red_step(self):
-        self._select_a_chess()
-        result = self._move_a_chess()
-
-        # 落子之后，交换走棋方
-        self.game.exchange()
-
-        return result
+        return self._step_by_user()
 
     def _game_logic(self):
         # 如果游戏没有获胜方，则游戏继续，否则一直显示"获胜"
         if self.game.show_win:
             return False
         if self.game.get_player() == 'r':
-            return self._red_step()
+            temp = self._red_step()
         else:
-            return self._black_step()
+            temp = self._black_step()
+        if temp:
+            # 落子之后，交换走棋方
+            self.game.exchange()
+            return temp
+        else:
+            return False
 
     def _show(self):
         # 显示游戏背景
@@ -298,7 +299,7 @@ class MainEntrance:
                     sys.exit()  #
                 if self._game_logic():
                     break
-                self._show()
+            self._show()
 
 
 if __name__ == '__main__':

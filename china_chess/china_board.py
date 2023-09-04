@@ -367,7 +367,7 @@ class ChessBoard(object):
         将棋子移动到指定位置
         """
         # 得到要移动的棋子的位置
-        if current_player == 'r':
+        if old_row is None and old_col is None:
             old_row, old_col = ClickBox.singleton.row, ClickBox.singleton.col
         else:
             pass

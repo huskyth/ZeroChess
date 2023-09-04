@@ -51,7 +51,7 @@ class ChinaChessBoard(ChessBoard):
         for i in range(len(self.chessboard_map) // 2):
             for j in range(len(self.chessboard_map[0])):
                 self.chessboard_map[i][j], self.chessboard_map[9 - i][8 - j] = self.chessboard_map[9 - i][8 - j], \
-                    self.chessboard_map[i][j]
+                                                                               self.chessboard_map[i][j]
 
     def to_integer_map(self):
         result = [[0 for i in range(MAP_WIDTH)] for j in range(MAP_HEIGHT)]
@@ -88,6 +88,9 @@ class ChinaChessBoard(ChessBoard):
                 else:
                     result[i][j] = '---'
         return result
+
+    def move_chess_old(self, new_row, new_col, current_player, old_row=None, old_col=None):
+        super().move_chess(new_row, new_col, current_player, old_row, old_col)
 
     def move_chess(self, old_row, old_col, new_row, new_col):
         result = 0
