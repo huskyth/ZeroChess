@@ -26,7 +26,6 @@ class PolicyAdapter:
         return np.argmax(self.pmcts.getActionProb(board, temp=0))
 
     def get_next_policy(self, original_game_board_with_chess, c_player):
-
         ccb = ChinaChessBoard(None)
         ccb.deepcopy(original_game_board_with_chess)
 
