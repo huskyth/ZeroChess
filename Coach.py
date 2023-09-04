@@ -10,6 +10,7 @@ from tqdm import tqdm
 
 from Arena import Arena
 from MCTS import MCTS
+from china_chess.constant import MAX_NOT_EAR_NUMBER
 
 log = logging.getLogger(__name__)
 
@@ -49,7 +50,8 @@ class Coach:
         board = self.game.getInitBoard()
         self.curPlayer = 1
         episodeStep = 0
-
+        sum_of_is_eat = 0
+        continue_list = []
         while True:
             episodeStep += 1
             canonicalBoard = self.game.getCanonicalForm(board, self.curPlayer)
@@ -60,10 +62,17 @@ class Coach:
 
             action = np.random.choice(len(pi), p=pi)
             board, self.curPlayer, is_eat = self.game.getNextState(board, self.curPlayer, action)
+            if is_eat:
+                sum_of_is_eat = 0
+            else:
+                sum_of_is_eat += is_eat
+            if len(continue_list) == 12:
+                del continue_list[0]
+            continue_list.append(action)
 
             is_end, r = self.game.getGameEnded(board, self.curPlayer)
 
-            if is_end:
+            if is_end or sum_of_is_eat >= MAX_NOT_EAR_NUMBER or MCTS.is_draw(continue_list):
                 return [(x[0], x[2], r * ((-1) ** (x[1] != self.curPlayer))) for x in trainExamples]
 
     def learn(self):

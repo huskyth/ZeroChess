@@ -2,6 +2,9 @@ import logging
 
 from tqdm import tqdm
 
+import MCTS
+from china_chess.constant import MAX_NOT_EAR_NUMBER
+
 log = logging.getLogger(__name__)
 
 
@@ -41,7 +44,10 @@ class Arena():
         curPlayer = 1
         board = self.game.getInitBoard()
         it = 0
-        while not self.game.getGameEnded(board, curPlayer)[0]:
+        sum_of_is_eat = 0
+        continue_list = []
+        while not self.game.getGameEnded(board, curPlayer)[
+            0] and sum_of_is_eat < MAX_NOT_EAR_NUMBER and not MCTS.MCTS.is_draw(continue_list):
             it += 1
             if verbose:
                 assert self.display
@@ -50,18 +56,26 @@ class Arena():
             action = players[curPlayer + 1](self.game.getCanonicalForm(board, curPlayer))
 
             valids = self.game.getValidMoves(self.game.getCanonicalForm(board, curPlayer), 1)
-
+            if len(continue_list) == 12:
+                del continue_list[0]
+            continue_list.append(action)
             if valids[action] == 0:
                 log.error(f'Action {action} is not valid!')
                 log.debug(f'valids = {valids}')
                 assert valids[action] > 0
-            board, curPlayer = self.game.getNextState(board, curPlayer, action)
+            board, curPlayer, is_eat = self.game.getNextState(board, curPlayer, action)
+            if is_eat:
+                sum_of_is_eat = 0
+            else:
+                sum_of_is_eat += is_eat
         if verbose:
             assert self.display
             print("Game over: Turn ", str(it), "Result ", str(self.game.getGameEnded(board, 1)))
             self.display(board)
-
+        if sum_of_is_eat >= MAX_NOT_EAR_NUMBER or MCTS.MCTS.is_draw(continue_list):
+            return 0
         is_end, value = self.game.getGameEnded(board, curPlayer)
+        assert is_end
         return curPlayer * value
 
     def playGames(self, num, verbose=False):

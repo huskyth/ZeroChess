@@ -62,7 +62,8 @@ class MCTS:
 
         return y
 
-    def _is_draw(self, continue_steps):
+    @staticmethod
+    def is_draw(continue_steps):
         if len(continue_steps) == 12:
             if continue_steps[0] == continue_steps[4] and continue_steps[4] == continue_steps[8] and \
                     continue_steps[1] == continue_steps[5] and continue_steps[5] == continue_steps[9] and \
@@ -97,7 +98,7 @@ class MCTS:
                                                                   ))
             return 0
 
-        if self._is_draw(continue_steps):
+        if MCTS.is_draw(continue_steps):
             ChinaChessBoard.print_visible_string_from_integer_map(canonicalBoard,
                                                                   title='第{}次递归，判和棋的状态如下,递归深度为{}:'.format(
                                                                       i, times))
