@@ -59,7 +59,7 @@ class Coach:
             trainExamples.append([canonicalBoard, self.curPlayer, pi, None])
 
             action = np.random.choice(len(pi), p=pi)
-            board, self.curPlayer = self.game.getNextState(board, self.curPlayer, action)
+            board, self.curPlayer, is_eat = self.game.getNextState(board, self.curPlayer, action)
 
             is_end, r = self.game.getGameEnded(board, self.curPlayer)
 

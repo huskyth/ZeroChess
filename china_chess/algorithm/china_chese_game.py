@@ -43,10 +43,10 @@ class ChinaChessGame(Game):
             need_transfer = True
             b = ChinaChessBoard(None)
             b.to_chess_map(board * -1)
-        b.move_chess(*b.algorithm_idx_to_row_column(action))
+        is_eat = b.move_chess(*b.algorithm_idx_to_row_column(action))
         if need_transfer:
-            return b.to_integer_map() * -1, -player
-        return b.to_integer_map(), -player
+            return b.to_integer_map() * -1, -player, is_eat
+        return b.to_integer_map(), -player, is_eat
 
     def _position_r_j(self, chessboard_map):
         for x in range(10):

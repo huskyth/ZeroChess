@@ -37,7 +37,7 @@ class MCTS:
                    proportional to Nsa[(s,a)]**(1./temp)
         """
         for i in range(self.args.numMCTSSims):
-            self.search(canonicalBoard, i, 0)
+            self.search(canonicalBoard, i, [], 0)
 
         s = self.game.stringRepresentation(canonicalBoard)
         counts = [self.Nsa[(s, a)] if (s, a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
@@ -62,7 +62,16 @@ class MCTS:
 
         return y
 
-    def search(self, canonicalBoard, i, times):
+    def _is_draw(self, continue_steps):
+        if len(continue_steps) == 12:
+            if continue_steps[0] == continue_steps[4] and continue_steps[4] == continue_steps[8] and \
+                    continue_steps[1] == continue_steps[5] and continue_steps[5] == continue_steps[9] and \
+                    continue_steps[2] == continue_steps[6] and continue_steps[6] == continue_steps[10] and \
+                    continue_steps[3] == continue_steps[7] and continue_steps[7] == continue_steps[11]:
+                return True
+        return False
+
+    def search(self, canonicalBoard, i, continue_steps, is_eat_param):
         """
         This function performs one iteration of MCTS. It is recursively called
         till a leaf node is found. The action chosen at each node is one that
@@ -81,11 +90,16 @@ class MCTS:
         Returns:
             v: the negative of the value of the current canonicalBoard
         """
-        if times >= 900:
+        if is_eat_param >= 60:
             ChinaChessBoard.print_visible_string_from_integer_map(canonicalBoard,
-                                                                  title='第{}次递归深度为{}的状态如下:'.format(
-                                                                      i, times
+                                                                  title='第{}次递归，没有吃子数目为{}，和棋的状态如下:'.format(
+                                                                      i, is_eat_param
                                                                   ))
+            return 0
+
+        if self._is_draw(continue_steps):
+            ChinaChessBoard.print_visible_string_from_integer_map(canonicalBoard,
+                                                                  title='第{}次递归，判和棋的状态如下:'.format(i))
             return 0
 
         s = self.game.stringRepresentation(canonicalBoard)
@@ -94,6 +108,10 @@ class MCTS:
 
         if self.Es[s][0]:
             # terminal node
+            ChinaChessBoard.print_visible_string_from_integer_map(canonicalBoard,
+                                                                  title='第{}次递归，分胜负的状态如下:'.format(
+                                                                      i
+                                                                  ))
             return -self.Es[s][1]
 
         if s not in self.Ps:
@@ -108,7 +126,7 @@ class MCTS:
                 # if all valid moves were masked make all valid moves equally probable
 
                 # NB! All valid moves may be masked if either your NNet architecture is insufficient or you've get overfitting or something else.
-                # If you have got dozens or hundreds of these messages you should pay attention to your NNet and/or training process.   
+                # If you have got dozens or hundreds of these messages you should pay attention to your NNet and/or training process.
                 log.error("All valid moves were masked, doing a workaround.")
                 self.Ps[s] = self.Ps[s] + valids
                 self.Ps[s] /= np.sum(self.Ps[s])
@@ -141,15 +159,17 @@ class MCTS:
                                                               title='第{}次递归执行下次action_前_的状态如下:action为{},{}'.format(
                                                                   i, a, LABELS[a]
                                                               ))
-        next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
-        # ChinaChessBoard.print_visible_string_from_integer_map(next_s,
-        #                                                       title='第{}次递归执行下次action_后_的状态如下:'.format(i))
+        next_s, next_player, is_eat = self.game.getNextState(canonicalBoard, 1, a)
         next_s = self.game.getCanonicalForm(next_s, next_player)
-        # ChinaChessBoard.print_visible_string_from_integer_map(next_s,
-        #                                                       title='第{}次递归执行下次action后getCanonicalForm的状态如下:'.format(
-        #                                                           i))
 
-        v = self.search(next_s, i, times + 1)
+        if len(continue_steps == 12):
+            del continue_steps[0]
+        continue_steps.append(a)
+        if is_eat:
+            is_eat_param = 0
+        else:
+            is_eat_param += 1
+        v = self.search(next_s, i, continue_steps, is_eat_param)
 
         if (s, a) in self.Qsa:
             self.Qsa[(s, a)] = (self.Nsa[(s, a)] * self.Qsa[(s, a)] + v) / (self.Nsa[(s, a)] + 1)
