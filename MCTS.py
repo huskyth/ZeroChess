@@ -130,7 +130,7 @@ class MCTS:
                     best_act = a
 
         a = best_act
-        a = self._top_k(temp_list, 3)
+        a = self._top_k(temp_list, 2)
         ChinaChessBoard.print_visible_string_from_integer_map(canonicalBoard,
                                                               title='第{}次递归执行下次action_前_的状态如下:action为{},{}'.format(
                                                                   i, a, LABELS[a]
