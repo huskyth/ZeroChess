@@ -37,7 +37,7 @@ class MCTS:
                    proportional to Nsa[(s,a)]**(1./temp)
         """
         for i in range(self.args.numMCTSSims):
-            self.search(canonicalBoard, i)
+            self.search(canonicalBoard, i, 0)
 
         s = self.game.stringRepresentation(canonicalBoard)
         counts = [self.Nsa[(s, a)] if (s, a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
@@ -62,7 +62,7 @@ class MCTS:
 
         return y
 
-    def search(self, canonicalBoard, i):
+    def search(self, canonicalBoard, i, times):
         """
         This function performs one iteration of MCTS. It is recursively called
         till a leaf node is found. The action chosen at each node is one that
@@ -81,6 +81,12 @@ class MCTS:
         Returns:
             v: the negative of the value of the current canonicalBoard
         """
+        if times >= 900:
+            ChinaChessBoard.print_visible_string_from_integer_map(canonicalBoard,
+                                                                  title='第{}次递归深度为{}的状态如下:'.format(
+                                                                      i, times
+                                                                  ))
+            return 0
 
         s = self.game.stringRepresentation(canonicalBoard)
         if s not in self.Es:
@@ -130,7 +136,7 @@ class MCTS:
                     best_act = a
 
         a = best_act
-        a = self._top_k(temp_list, 2)
+        # a = self._top_k(temp_list, 2)
         ChinaChessBoard.print_visible_string_from_integer_map(canonicalBoard,
                                                               title='第{}次递归执行下次action_前_的状态如下:action为{},{}'.format(
                                                                   i, a, LABELS[a]
@@ -143,7 +149,7 @@ class MCTS:
         #                                                       title='第{}次递归执行下次action后getCanonicalForm的状态如下:'.format(
         #                                                           i))
 
-        v = self.search(next_s, i)
+        v = self.search(next_s, i, times + 1)
 
         if (s, a) in self.Qsa:
             self.Qsa[(s, a)] = (self.Nsa[(s, a)] * self.Qsa[(s, a)] + v) / (self.Nsa[(s, a)] + 1)
