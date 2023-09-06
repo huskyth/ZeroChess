@@ -30,6 +30,13 @@ class ChinaChessGame(Game):
         else:
             self.continue_not_eat_chess_number += is_eat
 
+    def _is_draw(self, integer_board):
+        for i in range(10):
+            for j in range(9):
+                if abs(integer_board[i][j]) in [1, 2, 6, 7]:
+                    return False
+        return True
+
     def getNextState(self, board, player, action):
         # if player takes action on board, return next (board,player)
         # action must be a valid move
@@ -126,7 +133,7 @@ class ChinaChessGame(Game):
         elif b.judge_win(reverse_player):
             return True, -1 * is_transfer
         else:
-            return False, 0
+            return self._is_draw(b.to_integer_map()), 0
 
     def getCanonicalForm(self, board, player):
         # return state if player==1, else return -state if player==-1

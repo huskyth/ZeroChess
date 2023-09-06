@@ -27,7 +27,7 @@ class MCTS:
         self.Es = {}  # stores game.getGameEnded ended for board s
         self.Vs = {}  # stores game.getValidMoves for board s
 
-    def getActionProb(self, canonicalBoard, temp=1):
+    def getActionProb(self, canonicalBoard, episodeStep, iter_number, temp=1):
         """
         This function performs numMCTSSims simulations of MCTS starting from
         canonicalBoard.
@@ -37,7 +37,12 @@ class MCTS:
                    proportional to Nsa[(s,a)]**(1./temp)
         """
         for i in range(self.args.numMCTSSims):
-            self.search(canonicalBoard, i, [], 0, 0)
+            ChinaChessBoard.print_visible_string_from_integer_map(canonicalBoard,
+                                                                  title='第{}次迭，代第{}次步骤，第{}次搜索,测试用'.format(
+
+                                                                      iter_number, episodeStep, i
+                                                                  ), iter_number=1000000)
+            self.search(canonicalBoard, i, [], 0, 0, iter_number)
 
         s = self.game.stringRepresentation(canonicalBoard)
         counts = [self.Nsa[(s, a)] if (s, a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
@@ -72,7 +77,7 @@ class MCTS:
                 return True
         return False
 
-    def search(self, canonicalBoard, i, continue_steps, is_eat_param, times):
+    def search(self, canonicalBoard, i, continue_steps, is_eat_param, times, iter_number):
         """
         This function performs one iteration of MCTS. It is recursively called
         till a leaf node is found. The action chosen at each node is one that
@@ -95,13 +100,13 @@ class MCTS:
             ChinaChessBoard.print_visible_string_from_integer_map(canonicalBoard,
                                                                   title='第{}次递归，没有吃子数目为{}，和棋的状态如下,递归深度为{}:'.format(
                                                                       i, is_eat_param, times
-                                                                  ))
+                                                                  ), iter_number=iter_number)
             return 0
 
         if MCTS.is_draw(continue_steps):
             ChinaChessBoard.print_visible_string_from_integer_map(canonicalBoard,
                                                                   title='第{}次递归，判和棋的状态如下,递归深度为{}:'.format(
-                                                                      i, times))
+                                                                      i, times), iter_number=iter_number)
             return 0
 
         s = self.game.stringRepresentation(canonicalBoard)
@@ -113,7 +118,7 @@ class MCTS:
             ChinaChessBoard.print_visible_string_from_integer_map(canonicalBoard,
                                                                   title='第{}次递归，分胜负的状态如下,递归深度为{}:'.format(
                                                                       i, times
-                                                                  ))
+                                                                  ), iter_number=iter_number)
             return -self.Es[s][1]
 
         if s not in self.Ps:
@@ -160,7 +165,7 @@ class MCTS:
         ChinaChessBoard.print_visible_string_from_integer_map(canonicalBoard,
                                                               title='第{}次递归执行下次action_前_的状态如下:action为{},{},递归深度为{}'.format(
                                                                   i, a, LABELS[a], times
-                                                              ))
+                                                              ), iter_number=iter_number)
         next_s, next_player, is_eat = self.game.getNextState(canonicalBoard, 1, a)
         next_s = self.game.getCanonicalForm(next_s, next_player)
 
@@ -171,7 +176,7 @@ class MCTS:
             is_eat_param = 0
         else:
             is_eat_param += 1
-        v = self.search(next_s, i, continue_steps, is_eat_param, times + 1)
+        v = self.search(next_s, i, continue_steps, is_eat_param, times + 1, iter_number)
 
         if (s, a) in self.Qsa:
             self.Qsa[(s, a)] = (self.Nsa[(s, a)] * self.Qsa[(s, a)] + v) / (self.Nsa[(s, a)] + 1)
@@ -182,6 +187,6 @@ class MCTS:
             self.Nsa[(s, a)] = 1
             ChinaChessBoard.print_visible_string_from_integer_map(canonicalBoard,
                                                                   title='第{}次递归执行的action为{},递归深度为{}:'.format(
-                                                                      i, a, times))
+                                                                      i, a, times), iter_number=iter_number)
         self.Ns[s] += 1
         return -v

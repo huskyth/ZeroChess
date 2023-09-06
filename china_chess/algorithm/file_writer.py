@@ -11,7 +11,7 @@ def write_line(file_name, msg, title):
         ticks = str(time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime(time.time())))  # 打印按指定格式排版的时间
     if not os.path.exists(LOGGER_PATH):
         os.mkdir(LOGGER_PATH)
-    ticks = ticks.replace(':','：')
+    ticks = ticks.replace(':', '：')
     name = str(LOGGER_PATH / (ticks + "_" + file_name + "_os_ID_" + str(os.getpid()) + '.txt'))
     with open(name, 'a', encoding='utf-8') as f:
         f.write(title + '\n')

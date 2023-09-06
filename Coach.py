@@ -32,7 +32,7 @@ class Coach:
         self.skipFirstSelfPlay = False  # can be overriden in loadTrainExamples()
         self.summary = MySummary()
 
-    def executeEpisode(self):
+    def executeEpisode(self, iter_number):
         """
         This function executes one episode of self-play, starting with player 1.
         As the game is played, each turn is added as a training example to
@@ -59,7 +59,7 @@ class Coach:
             canonicalBoard = self.game.getCanonicalForm(board, self.curPlayer)
             temp = int(episodeStep < self.args.tempThreshold)
 
-            pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
+            pi = self.mcts.getActionProb(canonicalBoard, iter_number, episodeStep, temp=temp)
             trainExamples.append([canonicalBoard, self.curPlayer, pi, None])
 
             action = np.random.choice(len(pi), p=pi)
@@ -95,7 +95,7 @@ class Coach:
 
                 for _ in tqdm(range(self.args.numEps), desc="Self Play"):
                     self.mcts = MCTS(self.game, self.nnet, self.args)  # reset search tree
-                    iterationTrainExamples += self.executeEpisode()
+                    iterationTrainExamples += self.executeEpisode(i)
 
                 # save the iteration examples to the history 
                 self.trainExamplesHistory.append(iterationTrainExamples)
@@ -122,8 +122,8 @@ class Coach:
             nmcts = MCTS(self.game, self.nnet, self.args)
 
             log.info('PITTING AGAINST PREVIOUS VERSION')
-            arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
-                          lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game)
+            arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, i, -1, temp=0)),
+                          lambda x: np.argmax(nmcts.getActionProb(x, i, -1, temp=0)), self.game)
             pwins, nwins, draws = arena.playGames(self.args.arenaCompare)
             win_rate = float(nwins) / (pwins + nwins)
             self.summary.add_float(x=i, y=win_rate, title='Winner rate')
