@@ -12,7 +12,7 @@ class PolicyAdapter:
 
     def __init__(self):
         self.net = NNetWrapper()
-        self.net.load_checkpoint(folder=MODEL_PATH)
+        self.net.load_checkpoint(folder=BEST_MODEL_PATH, filename="best.pth.tar")
         self.game = ChinaChessGame()
         self.pmcts = MCTS(self.game, self.net, args)
 
@@ -23,7 +23,7 @@ class PolicyAdapter:
         return LETTERS[8 - column] + NUMBERS[row] + LETTERS[8 - end_column] + NUMBERS[end_row]
 
     def action_by_mcst(self, board):
-        return np.argmax(self.pmcts.getActionProb(board, temp=0))
+        return np.argmax(self.pmcts.getActionProb(board, iter_number=-1, episodeStep=-1, temp=0))
 
     def get_next_policy(self, original_game_board_with_chess, c_player):
         ccb = ChinaChessBoard(None)

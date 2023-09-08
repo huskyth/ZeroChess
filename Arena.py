@@ -6,7 +6,7 @@ import MCTS
 from china_chess.constant import MAX_NOT_EAR_NUMBER
 
 log = logging.getLogger(__name__)
-
+from china_chess.algorithm.china_chess_board import *
 
 class Arena:
     """
@@ -49,6 +49,11 @@ class Arena:
         while not self.game.getGameEnded(board, curPlayer)[
             0] and sum_of_is_eat < MAX_NOT_EAR_NUMBER and not MCTS.MCTS.is_draw(continue_list):
             it += 1
+            ChinaChessBoard.print_visible_string_from_integer_map(board,
+                                                                  title='第{}次着'.format(
+
+                                                                      it
+                                                                  ), iter_number=-438)
             if verbose:
                 assert self.display
                 print("Turn ", str(it), "Player ", str(curPlayer))
