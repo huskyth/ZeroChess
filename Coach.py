@@ -12,6 +12,7 @@ from Arena import Arena
 from MCTS import MCTS
 from china_chess.algorithm.tensor_board_tool import MySummary
 from china_chess.constant import MAX_NOT_EAR_NUMBER
+import gc
 
 log = logging.getLogger(__name__)
 
@@ -135,6 +136,7 @@ class Coach:
                 log.info('ACCEPTING NEW MODEL')
                 self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
                 self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
+            gc.collect()
 
     def getCheckpointFile(self, iteration):
         return 'checkpoint_' + str(iteration) + '.pth.tar'

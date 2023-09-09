@@ -27,6 +27,7 @@ TRAIN_DATASET_PATH = Path(__file__).parent / "train_data"
 SUMMARY_PATH = Path(__file__).parent / "summary"
 MODEL_PATH = Path(__file__).parent / "algorithm" / "checkpoint"
 BEST_MODEL_PATH = Path(__file__).parent.parent / "temp"
+NEWS_MODEL_PATH = Path(__file__).parent.parent / "checkpoint"
 
 IMAGE_PATH = Path(__file__).parent
 LOGGER_PATH = Path(__file__).parent / "logger"
