@@ -25,7 +25,7 @@ NOT_SEE_NUMBER_TO_INT = {
 DATASET_PATH = Path(__file__).parent / "dataset"
 TRAIN_DATASET_PATH = Path(__file__).parent / "train_data"
 SUMMARY_PATH = Path(__file__).parent / "summary"
-MODEL_PATH = Path(__file__).parent / "algorithm" / "checkpoint"
+SL_MODEL_PATH = Path(__file__).parent / "algorithm" / "checkpoint"
 BEST_MODEL_PATH = Path(__file__).parent.parent / "temp"
 NEWS_MODEL_PATH = Path(__file__).parent.parent / "checkpoint"
 

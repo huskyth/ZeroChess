@@ -199,7 +199,7 @@ class MainEntrance:
 
         if clicked_dot:
             self.chessboard.move_chess_old(clicked_dot.row,
-                                       clicked_dot.col, self.game.get_player(), self.clicked_row, self.clicked_col)
+                                           clicked_dot.col, self.game.get_player(), self.clicked_row, self.clicked_col)
             # 清理「点击对象」、「可落子位置对象」
             Dot.clean_last_position()
             ClickBox.clean()
@@ -228,7 +228,7 @@ class MainEntrance:
         old_row, old_col, new_row, new_col = self.policy.get_next_policy(self.chessboard.chessboard_map, player)
 
         if None in [old_row, old_col, new_row, new_col]:
-            self.game.set_win('r')
+            self.game.set_win('r' if player == 'b' else 'b')
             return True
 
         self.chessboard.move_chess_old(new_row, new_col, self.game.get_player(), old_row, old_col)
@@ -242,6 +242,7 @@ class MainEntrance:
             else:
                 # 如果攻击到对方，则标记显示"将军"效果
                 self.game.set_attack()
+        return True
 
     def _black_step(self):
         self._step_by_policy('b')
@@ -257,9 +258,9 @@ class MainEntrance:
         if self.game.show_win:
             return False
         if self.game.get_player() == 'r':
-            temp = self._red_step()
+            temp = self._step_by_policy('r')
         else:
-            temp = self._black_step()
+            temp = self._step_by_policy('b')
         if temp:
             # 落子之后，交换走棋方
             self.game.exchange()
@@ -297,6 +298,8 @@ class MainEntrance:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()  #
+                if not pygame.mouse.get_pressed()[0]:
+                    continue
                 if self._game_logic():
                     break
             self._show()

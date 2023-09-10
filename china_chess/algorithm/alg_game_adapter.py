@@ -12,7 +12,7 @@ class PolicyAdapter:
 
     def __init__(self):
         self.net = NNetWrapper()
-        self.net.load_checkpoint(folder=NEWS_MODEL_PATH, filename="checkpoint.pth.tar")
+        self.net.load_checkpoint(folder=BEST_MODEL_PATH, filename="best.pth.tar")
         self.game = ChinaChessGame()
         self.pmcts = MCTS(self.game, self.net, args)
 
