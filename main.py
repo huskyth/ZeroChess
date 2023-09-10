@@ -2,7 +2,9 @@ import os
 
 os.environ['NUMEXPR_MAX_THREADS'] = '16'
 import logging
+import ray
 
+ray.init()
 import coloredlogs
 
 from Coach import Coach
