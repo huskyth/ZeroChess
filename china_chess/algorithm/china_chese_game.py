@@ -53,7 +53,7 @@ class ChinaChessGame(Game):
         b.flip_up_down_and_left_right()
         board_flip = b.to_integer_map()
         pi_flip = self._flip_up_down_and_left_right_of_pi(pi)
-        return [board, board_flip], [pi, pi_flip]
+        return [(board, pi), (board_flip, pi_flip)]
 
     def getNextState(self, board, player, action):
         # if player takes action on board, return next (board,player)

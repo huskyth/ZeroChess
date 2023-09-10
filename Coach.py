@@ -33,6 +33,9 @@ class Coach:
         self.skipFirstSelfPlay = False  # can be overriden in loadTrainExamples()
         self.summary = MySummary()
 
+        self.pmcts = None
+        self.nmcts = None
+
     def executeEpisode(self, iter_number):
         """
         This function executes one episode of self-play, starting with player 1.
@@ -81,6 +84,12 @@ class Coach:
             if is_end or sum_of_is_eat >= MAX_NOT_EAR_NUMBER or MCTS.is_draw(continue_list):
                 return [(x[0], x[2], r * ((-1) ** (x[1] != self.curPlayer))) for x in trainExamples]
 
+    def temp_p(self, x):
+        return np.argmax(self.pmcts.getActionProb(x, -1, -1, temp=0))
+
+    def temp_n(self, x):
+        return np.argmax(self.nmcts.getActionProb(x, -1, -1, temp=0))
+
     def learn(self):
         """
         Performs numIters iterations with numEps episodes of self-play in each
@@ -101,7 +110,7 @@ class Coach:
                     self.mcts = MCTS(self.game, self.nnet, self.args)  # reset search tree
                     iterationTrainExamples += self.executeEpisode(i)
 
-                # save the iteration examples to the history 
+                # save the iteration examples to the history
                 self.trainExamplesHistory.append(iterationTrainExamples)
 
             if len(self.trainExamplesHistory) > self.args.numItersForTrainExamplesHistory:
@@ -109,7 +118,7 @@ class Coach:
                     f"Removing the oldest entry in trainExamples. len(trainExamplesHistory) = {len(self.trainExamplesHistory)}")
                 self.trainExamplesHistory.pop(0)
             # backup history to a file
-            # NB! the examples were collected using the model from the previous iteration, so (i-1)  
+            # NB! the examples were collected using the model from the previous iteration, so (i-1)
             self.saveTrainExamples(i - 1)
 
             # shuffle examples before training
@@ -126,8 +135,8 @@ class Coach:
             nmcts = MCTS(self.game, self.nnet, self.args)
 
             log.info('PITTING AGAINST PREVIOUS VERSION')
-            arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, i, -1, temp=0)),
-                          lambda x: np.argmax(nmcts.getActionProb(x, i, -1, temp=0)), self.game)
+            arena = Arena(self.temp_p,
+                          self.temp_n, self.game)
             pwins, nwins, draws = arena.playGames(self.args.arenaCompare)
             win_rate = float(nwins) / (pwins + nwins)
             self.summary.add_float(x=i, y=win_rate, title='Winner rate')
