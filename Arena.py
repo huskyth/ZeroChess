@@ -8,6 +8,7 @@ from china_chess.constant import MAX_NOT_EAR_NUMBER
 log = logging.getLogger(__name__)
 from china_chess.algorithm.china_chess_board import *
 
+
 class Arena:
     """
     An Arena class where any 2 agents can be pit against each other.
