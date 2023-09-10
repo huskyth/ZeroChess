@@ -37,6 +37,24 @@ class ChinaChessGame(Game):
                     return False
         return True
 
+    def _flip_up_down_and_left_right_of_pi(self, pi):
+        max_i = np.argmax(np.array(pi))
+        res = [0] * len(pi)
+        string = LABELS[max_i]
+        label = LETTERS[8 - LETTERS_TO_IND[string[0]]] + str(9 - int(string[1])) + LETTERS[
+            8 - LETTERS_TO_IND[string[2]]] + str(
+            9 - int(string[3]))
+        res[LABELS_TO_INDEX[label]] = 1
+        return res
+
+    def getSymmetries(self, board, pi):
+        b = ChinaChessBoard()
+        b.to_chess_map(board)
+        b.flip_up_down_and_left_right()
+        board_flip = b.to_integer_map()
+        pi_flip = self._flip_up_down_and_left_right_of_pi(pi)
+        return [board, board_flip], [pi, pi_flip]
+
     def getNextState(self, board, player, action):
         # if player takes action on board, return next (board,player)
         # action must be a valid move
@@ -138,22 +156,6 @@ class ChinaChessGame(Game):
     def getCanonicalForm(self, board, player):
         # return state if player==1, else return -state if player==-1
         return player * board
-
-    def getSymmetries(self, board, pi):
-        # mirror, rotational
-        assert (len(pi) == self.n ** 2 + 1)  # 1 for pass
-        pi_board = np.reshape(pi[:-1], (self.n, self.n))
-        l = []
-
-        for i in range(1, 5):
-            for j in [True, False]:
-                newB = np.rot90(board, i)
-                newPi = np.rot90(pi_board, i)
-                if j:
-                    newB = np.fliplr(newB)
-                    newPi = np.fliplr(newPi)
-                l += [(newB, list(newPi.ravel()) + [pi[-1]])]
-        return l
 
     def _flip_up_down_and_left_right(self, board):
         result = [[0 for i in range(MAP_WIDTH)] for j in range(MAP_HEIGHT)]

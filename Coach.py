@@ -61,7 +61,10 @@ class Coach:
             temp = int(episodeStep < self.args.tempThreshold)
 
             pi = self.mcts.getActionProb(canonicalBoard, iter_number, episodeStep, temp=temp)
-            trainExamples.append([canonicalBoard, self.curPlayer, pi, None])
+
+            sym = self.game.getSymmetries(canonicalBoard, pi)
+            for b, p in sym:
+                trainExamples.append([b, self.curPlayer, p, None])
 
             action = np.random.choice(len(pi), p=pi)
             board, self.curPlayer, is_eat = self.game.getNextState(board, self.curPlayer, action)
