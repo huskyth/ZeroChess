@@ -1,11 +1,12 @@
+from china_chess.algorithm.data_loader import LoadData
 from othello.pytorch.NNet import NNetWrapper
 from china_chese_game import *
 
 
 def main():
-    g = ChinaCheseGame()
-    nn = NNetWrapper(g)
-    examples = Reader.read()
+    ChinaChessGame()
+    nn = NNetWrapper()
+    examples = LoadData().get_all_examples()
     nn.train(examples)
 
 
