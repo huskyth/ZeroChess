@@ -1,9 +1,7 @@
 import logging
 
 from tqdm import tqdm
-import ray
 import MCTS
-from china_chess.constant import MAX_NOT_EAR_NUMBER
 
 log = logging.getLogger(__name__)
 from china_chess.algorithm.china_chess_board import *
@@ -31,8 +29,7 @@ class Arena:
         self.game = game
         self.display = display
 
-    @ray.remote
-    def playGame(self, verbose=False, player1=None, player2=None):
+    def playGame(self, verbose=False):
         """
         Executes one episode of a game.
 
@@ -42,7 +39,7 @@ class Arena:
             or
                 draw result returned from the game that is neither 1, -1, nor 0.
         """
-        players = [player2, None, player1]
+        players = [self.player2, None, self.player1]
         curPlayer = 1
         board = self.game.getInitBoard()
         it = 0
@@ -101,14 +98,8 @@ class Arena:
         twoWon = 0
         draws = 0
 
-        y = [self.playGame.remote(self.player1, self.player2) for i in range(num)]
-        ready_ids, remaining_ids = ray.wait(y)
-        res_ready = ray.get(ready_ids)
-        res_remaining = ray.get(remaining_ids)
-        temp = res_ready + res_remaining
-        assert len(temp) == num
         for _ in tqdm(range(num), desc="Arena.playGames (1)"):
-            gameResult = temp[_]
+            gameResult = self.playGame()
             if gameResult == 1:
                 oneWon += 1
             elif gameResult == -1:
@@ -116,14 +107,10 @@ class Arena:
             else:
                 draws += 1
 
-        y = [self.playGame.remote(self.player2, self.player1) for i in range(num)]
-        ready_ids, remaining_ids = ray.wait(y)
-        res_ready = ray.get(ready_ids)
-        res_remaining = ray.get(remaining_ids)
-        temp = res_ready + res_remaining
-        assert len(temp) == num
+        self.player1, self.player2 = self.player2, self.player1
+
         for _ in tqdm(range(num), desc="Arena.playGames (2)"):
-            gameResult = temp[_]
+            gameResult = self.playGame()
             if gameResult == -1:
                 oneWon += 1
             elif gameResult == 1:
