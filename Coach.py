@@ -89,7 +89,7 @@ class Coach:
         It then pits the new neural network against the old one and accepts it
         only if it wins >= updateThreshold fraction of games.
         """
-
+        red_elo = 0
         for i in range(1, self.args.numIters + 1):
             # bookkeeping
             log.info(f'Starting Iter #{i} ...')
@@ -128,17 +128,19 @@ class Coach:
             log.info('PITTING AGAINST PREVIOUS VERSION')
             arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, i, -1, temp=0)),
                           lambda x: np.argmax(nmcts.getActionProb(x, i, -1, temp=0)), self.game)
-            pwins, nwins, draws = arena.playGames(self.args.arenaCompare)
-            win_rate = float(nwins) / (pwins + nwins)
-            self.summary.add_float(x=i, y=win_rate, title='Winner rate')
-            log.info('NEW/PREV WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
-            if pwins + nwins == 0 or win_rate < self.args.updateThreshold:
-                log.info('REJECTING NEW MODEL')
-                self.nnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
-            else:
+            red_elo_current, black_elo_current, draws = arena.playGames(self.args.arenaCompare)
+
+            self.summary.add_float(x=i, y=red_elo_current, title='Red Elo')
+            self.summary.add_float(x=i, y=black_elo_current, title='Black Elo')
+            log.info('DRAWS : %d' % (draws / self.args.arenaCompare))
+            if red_elo_current > red_elo:
+                red_elo = red_elo_current
                 log.info('ACCEPTING NEW MODEL')
                 self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
                 self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
+            else:
+                log.info('REJECTING NEW MODEL')
+                self.nnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
             gc.collect()
 
     def getCheckpointFile(self, iteration):

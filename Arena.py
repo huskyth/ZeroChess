@@ -5,6 +5,7 @@ import MCTS
 
 log = logging.getLogger(__name__)
 from china_chess.algorithm.china_chess_board import *
+from china_chess.algorithm.elo_helper import *
 
 
 class Arena:
@@ -28,6 +29,8 @@ class Arena:
         self.player2 = player2
         self.game = game
         self.display = display
+        self.elo_red = 0
+        self.elo_black = 0
 
     def playGame(self, verbose=False):
         """
@@ -92,30 +95,18 @@ class Arena:
             twoWon: games won by player2
             draws:  games won by nobody
         """
-
-        num = int(num / 2)
-        oneWon = 0
-        twoWon = 0
-        draws = 0
-
-        for _ in tqdm(range(num), desc="Arena.playGames (1)"):
-            gameResult = self.playGame()
-            if gameResult == 1:
-                oneWon += 1
-            elif gameResult == -1:
-                twoWon += 1
-            else:
-                draws += 1
-
         self.player1, self.player2 = self.player2, self.player1
-
-        for _ in tqdm(range(num), desc="Arena.playGames (2)"):
-            gameResult = self.playGame()
-            if gameResult == -1:
-                oneWon += 1
-            elif gameResult == 1:
-                twoWon += 1
+        draw_num = 0
+        for _ in tqdm(range(num), desc="Arena.playGames"):
+            game_result = self.playGame()
+            if game_result == 1:
+                w = 1
+            elif game_result == -1:
+                w = 0
             else:
-                draws += 1
+                draw_num += 1
+                w = 0.5
 
-        return oneWon, twoWon, draws
+            self.elo_red, self.elo_black = compute_elo(self.elo_red, self.elo_black, w)
+
+        return self.elo_red, self.elo_black, draw_num
