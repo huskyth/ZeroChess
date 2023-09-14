@@ -108,5 +108,5 @@ class Arena:
                 w = 0.5
 
             self.elo_red, self.elo_black = compute_elo(self.elo_red, self.elo_black, w)
-
+        # TODO://with error
         return self.elo_red, self.elo_black, draw_num
