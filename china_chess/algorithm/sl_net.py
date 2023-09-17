@@ -36,7 +36,7 @@ class NNetWrapper(NeuralNet):
             self.nnet.cuda()
 
     def train(self, examples):
-        n = int(len(examples) * 0.5)
+        n = int(len(examples) * 0.7)
         shuffle(examples)
 
         training_data = examples[:n]
