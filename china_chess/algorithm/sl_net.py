@@ -12,14 +12,14 @@ from china_chess.constant import *
 import torch
 import torch.optim as optim
 from china_chess.algorithm.tensor_board_tool import *
-from othello.pytorch.OthelloNNet import OthelloNNet as onnet
 from random import shuffle
+from cchess_net import *
 
 args = dotdict({
-    'lr': 0.0001,
-    'dropout': 0.5,
+    'lr': 0.001,
+    'dropout': 0.3,
     'epochs': 200,
-    'batch_size': 64,
+    'batch_size': 128,
     'cuda': torch.cuda.is_available(),
     'num_channels': 128,
 })
@@ -27,15 +27,16 @@ args = dotdict({
 
 class NNetWrapper(NeuralNet):
     def __init__(self):
-        self.nnet = onnet(args)
+        self.nnet = CChessNNet(args)
         self.board_x, self.board_y = 10, 9
         self.action_size = len(LABELS)
         self.summary = MySummary()
         if args.cuda:
+            print("使用了CUDA")
             self.nnet.cuda()
 
     def train(self, examples):
-        n = int(len(examples) * 0.8)
+        n = int(len(examples) * 0.5)
         shuffle(examples)
 
         training_data = examples[:n]
@@ -46,6 +47,7 @@ class NNetWrapper(NeuralNet):
         """
         optimizer = optim.Adam(self.nnet.parameters())
         step = 0
+        eval_step = 0
         pre_loss = float('inf')
         for epoch in range(args.epochs):
 
@@ -73,7 +75,7 @@ class NNetWrapper(NeuralNet):
                 out_pi, out_v = self.nnet(boards)
                 l_pi = self.loss_pi(target_pis, out_pi)
                 l_v = self.loss_v(target_vs, out_v)
-                total_loss = 1.3 * l_pi + l_v
+                total_loss = l_pi + l_v
 
                 # record loss
                 pi_losses.update(l_pi.item(), boards.size(0))
@@ -90,7 +92,8 @@ class NNetWrapper(NeuralNet):
 
             t = tqdm(range(batch_count), desc='Testing Net')
             for _ in t:
-                self.nnet.eval()
+                eval_step += 1
+
                 pi_test_losses = AverageMeter()
                 v_test_losses = AverageMeter()
                 sample_test_ids = np.random.randint(len(test_data), size=args.batch_size)
@@ -102,20 +105,23 @@ class NNetWrapper(NeuralNet):
                 if args.cuda:
                     boards, target_pis, target_vs = boards.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
                 # compute output
-                out_pi, out_v = self.nnet(boards)
+                self.nnet.eval()
+                with torch.no_grad():
+                    out_pi, out_v = self.nnet(boards)
+                out_pi, out_v = out_pi.detach(), out_v.detach()
                 l_pi = self.loss_pi(target_pis, out_pi)
                 l_v = self.loss_v(target_vs, out_v)
 
                 # record loss
                 pi_test_losses.update(l_pi.item(), boards.size(0))
                 v_test_losses.update(l_v.item(), boards.size(0))
+                self.summary.add_float(eval_step, pi_test_losses.avg, "Testing Policy Loss")
+                self.summary.add_float(eval_step, v_test_losses.avg, "Testing Value Loss")
 
             if pi_test_losses.avg + v_test_losses.avg < pre_loss:
                 print("保存最好的模型")
                 pre_loss = pi_test_losses.avg + v_test_losses.avg
                 self.save_checkpoint(filename="best_loss.pth.tar")
-            self.summary.add_float(step, pi_test_losses.avg, "Testing Policy Loss")
-            self.summary.add_float(step, v_test_losses.avg, "Testing Value Loss")
 
     def predict(self, board):
         """
