@@ -14,6 +14,7 @@ import torch.optim as optim
 from china_chess.algorithm.tensor_board_tool import *
 from random import shuffle
 from cchess_net import *
+from othello.pytorch.OthelloNNet import *
 
 args = dotdict({
     'lr': 0.001,
@@ -45,7 +46,7 @@ class NNetWrapper(NeuralNet):
         """
         examples: list of examples, each example is of form (board, pi, v)
         """
-        optimizer = optim.Adam(self.nnet.parameters())
+        optimizer = optim.Adam(self.nnet.parameters(), lr=0.000001)
         step = 0
         eval_step = 0
         pre_loss = float('inf')
@@ -91,11 +92,11 @@ class NNetWrapper(NeuralNet):
             batch_count = int(len(test_data) / args.batch_size)
 
             t = tqdm(range(batch_count), desc='Testing Net')
+            pi_test_losses = AverageMeter()
+            v_test_losses = AverageMeter()
             for _ in t:
                 eval_step += 1
 
-                pi_test_losses = AverageMeter()
-                v_test_losses = AverageMeter()
                 sample_test_ids = np.random.randint(len(test_data), size=args.batch_size)
                 boards, pis, vs = list(zip(*[test_data[i] for i in sample_test_ids]))
                 boards = torch.FloatTensor(np.array(boards).astype(np.float64))

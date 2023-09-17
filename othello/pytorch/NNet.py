@@ -13,7 +13,7 @@ import torch
 import torch.optim as optim
 from china_chess.algorithm.tensor_board_tool import *
 from .OthelloNNet import OthelloNNet as onnet
-
+from china_chess.algorithm.cchess_net import *
 args = dotdict({
     'lr': 0.001,
     'dropout': 0.5,
@@ -26,7 +26,7 @@ args = dotdict({
 
 class NNetWrapper(NeuralNet):
     def __init__(self):
-        self.nnet = onnet(args)
+        self.nnet = CChessNNet(args)
         self.board_x, self.board_y = 10, 9
         self.action_size = len(LABELS)
         self.summary = MySummary()
