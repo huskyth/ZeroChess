@@ -46,7 +46,7 @@ class NNetWrapper(NeuralNet):
         """
         examples: list of examples, each example is of form (board, pi, v)
         """
-        optimizer = optim.Adam(self.nnet.parameters(), lr=0.000001)
+        optimizer = optim.Adam(self.nnet.parameters(), lr=0.000001, weight_decay=0.01)
         step = 0
         eval_step = 0
         pre_loss = float('inf')

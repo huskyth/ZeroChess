@@ -14,50 +14,52 @@ class CChessNNet(nn.Module):
         self.board_x, self.board_y = 10, 9
         self.action_size = len(LABELS)
         self.args = args
+        
+        self.channel = 128
 
         super(CChessNNet, self).__init__()
 
-        self.conv1 = nn.Conv2d(1, out_channels=32, kernel_size=3, stride=1, padding=1)
-        self.bn1 = nn.BatchNorm2d(32)
+        self.conv1 = nn.Conv2d(1, out_channels=self.channel, kernel_size=3, stride=1, padding=1)
+        self.bn1 = nn.BatchNorm2d(self.channel)
         self.relu = F.relu
 
-        self.conv21 = nn.Conv2d(32, 32, 3, stride=1, padding=1)
-        self.bn21 = nn.BatchNorm2d(32)
-        self.conv22 = nn.Conv2d(32, 32, 3, stride=1, padding=1)
-        self.bn22 = nn.BatchNorm2d(32)
+        self.conv21 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.bn21 = nn.BatchNorm2d(self.channel)
+        self.conv22 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.bn22 = nn.BatchNorm2d(self.channel)
 
-        self.conv31 = nn.Conv2d(32, 32, 3, stride=1, padding=1)
-        self.bn31 = nn.BatchNorm2d(32)
-        self.conv32 = nn.Conv2d(32, 32, 3, stride=1, padding=1)
-        self.bn32 = nn.BatchNorm2d(32)
+        self.conv31 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.bn31 = nn.BatchNorm2d(self.channel)
+        self.conv32 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.bn32 = nn.BatchNorm2d(self.channel)
 
-        self.conv41 = nn.Conv2d(32, 32, 3, stride=1, padding=1)
-        self.bn41 = nn.BatchNorm2d(32)
-        self.conv42 = nn.Conv2d(32, 32, 3, stride=1, padding=1)
-        self.bn42 = nn.BatchNorm2d(32)
+        self.conv41 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.bn41 = nn.BatchNorm2d(self.channel)
+        self.conv42 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.bn42 = nn.BatchNorm2d(self.channel)
 
-        self.conv51 = nn.Conv2d(32, 32, 3, stride=1, padding=1)
-        self.bn51 = nn.BatchNorm2d(32)
-        self.conv52 = nn.Conv2d(32, 32, 3, stride=1, padding=1)
-        self.bn52 = nn.BatchNorm2d(32)
+        self.conv51 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.bn51 = nn.BatchNorm2d(self.channel)
+        self.conv52 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.bn52 = nn.BatchNorm2d(self.channel)
 
-        self.conv61 = nn.Conv2d(32, 32, 3, stride=1, padding=1)
-        self.bn61 = nn.BatchNorm2d(32)
-        self.conv62 = nn.Conv2d(32, 32, 3, stride=1, padding=1)
-        self.bn62 = nn.BatchNorm2d(32)
+        self.conv61 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.bn61 = nn.BatchNorm2d(self.channel)
+        self.conv62 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.bn62 = nn.BatchNorm2d(self.channel)
 
-        self.conv71 = nn.Conv2d(32, 32, 3, stride=1, padding=1)
-        self.bn71 = nn.BatchNorm2d(32)
-        self.conv72 = nn.Conv2d(32, 32, 3, stride=1, padding=1)
-        self.bn72 = nn.BatchNorm2d(32)
+        self.conv71 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.bn71 = nn.BatchNorm2d(self.channel)
+        self.conv72 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.bn72 = nn.BatchNorm2d(self.channel)
 
-        self.conv8_left = nn.Conv2d(32, 4, kernel_size=3, stride=1, padding=1)
+        self.conv8_left = nn.Conv2d(self.channel, 4, kernel_size=3, stride=1, padding=1)
         self.bn8_left = nn.BatchNorm2d(4)
         self.fc81_left = nn.Linear(360, 256)
         self.fc82_left = nn.Linear(256, 1)
 
-        self.conv8_right = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
-        self.bn8_right = nn.BatchNorm2d(32)
+        self.conv8_right = nn.Conv2d(self.channel, 32, kernel_size=3, stride=1, padding=1)
+        self.bn8_right = nn.BatchNorm2d(self.channel)
         self.fc81_right = nn.Linear(2880, 2086)
 
     def forward(self, x):
