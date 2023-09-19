@@ -72,16 +72,16 @@ class CChessNNet(nn.Module):
         x = self.relu(self._resnet(x, self.conv61, self.bn61, self.conv62, self.bn62))
         x = self.relu(self._resnet(x, self.conv71, self.bn71, self.conv72, self.bn72))
 
-        x_left = F.dropout(self.relu(self.bn8_left(self.conv8_left(x))), p=0.8,
+        x_left = F.dropout(self.relu(self.bn8_left(self.conv8_left(x))), p=0.3,
                            training=self.training)
 
         x_left = torch.flatten(x_left).view(-1, 360)
-        x_left = F.dropout(self.relu(self.fc81_left(x_left)), p=0.8,
+        x_left = F.dropout(self.relu(self.fc81_left(x_left)), p=0.3,
                            training=self.training)
         x_left = self.fc82_left(x_left)
 
         x_right = self.relu(self.conv8_right(x))
-        x_right = F.dropout(x_right, p=0.8,
+        x_right = F.dropout(x_right, p=0.3,
                             training=self.training)
 
         x_right = torch.flatten(x_right).view(-1, 2880)
