@@ -258,7 +258,7 @@ class MainEntrance:
         if self.game.show_win:
             return False
         if self.game.get_player() == 'r':
-            temp = self._red_step()
+            temp = self._step_by_policy('r')
         else:
             temp = self._step_by_policy('b')
         if temp:

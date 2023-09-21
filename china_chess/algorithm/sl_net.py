@@ -20,7 +20,7 @@ args = dotdict({
     'lr': 0.001,
     'dropout': 0.3,
     'epochs': 200,
-    'batch_size': 128,
+    'batch_size': 256,
     'cuda': torch.cuda.is_available(),
     'num_channels': 128,
 })
@@ -37,7 +37,7 @@ class NNetWrapper(NeuralNet):
             self.nnet.cuda()
 
     def train(self, examples):
-        n = int(len(examples) * 0.7)
+        n = int(len(examples) * 0.8)
         shuffle(examples)
 
         training_data = examples[:n]
@@ -46,7 +46,7 @@ class NNetWrapper(NeuralNet):
         """
         examples: list of examples, each example is of form (board, pi, v)
         """
-        optimizer = optim.Adam(self.nnet.parameters(), lr=0.0001, weight_decay=0.01)
+        optimizer = optim.Adam(self.nnet.parameters(), lr=0.0000001, weight_decay=0.01)
         step = 0
         eval_step = 0
         pre_loss = float('inf')
