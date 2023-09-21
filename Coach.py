@@ -9,7 +9,7 @@ import numpy as np
 from tqdm import tqdm
 
 from Arena import Arena
-from MCTS import MCTS
+from china_chess.algorithm.mcts_async import *
 from china_chess.algorithm.tensor_board_tool import MySummary
 from china_chess.constant import MAX_NOT_EAR_NUMBER
 import gc

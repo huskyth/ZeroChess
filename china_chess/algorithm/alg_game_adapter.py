@@ -1,6 +1,6 @@
 import numpy as np
 
-from MCTS import MCTS
+from china_chess.algorithm.mcts_async import *
 from othello.pytorch.NNet import NNetWrapper
 from china_chess.constant import *
 import copy
@@ -14,7 +14,7 @@ class PolicyAdapter:
         self.net = NNetWrapper()
         self.net.load_checkpoint(folder=SL_MODEL_PATH, filename="best_loss.pth.tar")
         self.game = ChinaChessGame()
-        self.pmcts = MCTS(self.game, self.net, args)
+        self.pmcts = MCTS(policy_value_fn=policy_value_fn_queue, policy_loop_arg=True)
 
     def _parse_move(self, string):
         return 9 - int(string[1]), LETTERS_TO_IND[string[0]], 9 - int(string[3]), LETTERS_TO_IND[string[2]],
@@ -23,7 +23,7 @@ class PolicyAdapter:
         return LETTERS[8 - column] + NUMBERS[row] + LETTERS[8 - end_column] + NUMBERS[end_row]
 
     def action_by_mcst(self, board):
-        return np.argmax(self.pmcts.getActionProb(board, iter_number=-1, episodeStep=-1, temp=0))
+        return np.argmax(self.pmcts.get_move_probs(board, predict_workers=[prediction_worker(self.pmcts)]))
 
     def get_next_policy(self, original_game_board_with_chess, c_player):
         ccb = ChinaChessBoard(None)

@@ -13,7 +13,7 @@ import torch
 import torch.optim as optim
 from china_chess.algorithm.tensor_board_tool import *
 from random import shuffle
-from cchess_net import *
+from china_chess.algorithm.cchess_net import *
 from othello.pytorch.OthelloNNet import *
 
 args = dotdict({
