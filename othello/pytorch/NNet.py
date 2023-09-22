@@ -14,6 +14,7 @@ import torch.optim as optim
 from china_chess.algorithm.tensor_board_tool import *
 from .OthelloNNet import OthelloNNet as onnet
 from china_chess.algorithm.cchess_net import *
+
 args = dotdict({
     'lr': 0.001,
     'dropout': 0.5,
@@ -88,13 +89,15 @@ class NNetWrapper(NeuralNet):
         # preparing input
         board = torch.FloatTensor(board.astype(np.float64))
         if args.cuda: board = board.contiguous().cuda()
-        board = board.view(1, self.board_x, self.board_y)
+
+        board = board.view(-1, self.board_x, self.board_y)
+
         self.nnet.eval()
         with torch.no_grad():
             pi, v = self.nnet(board)
 
         # print('PREDICTION TIME TAKEN : {0:03f}'.format(time.time()-start))
-        return torch.exp(pi).data.cpu().numpy()[0], v.data.cpu().numpy()[0]
+        return torch.exp(pi).data.cpu().numpy(), v.data.cpu().numpy()
 
     def loss_pi(self, targets, outputs):
         return -torch.sum(targets * outputs) / targets.size()[0]

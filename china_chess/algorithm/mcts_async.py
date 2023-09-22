@@ -97,7 +97,7 @@ async def prediction_worker(mcts_policy_async):
             continue
         item_list = [q.get_nowait() for _ in range(q.qsize())]
         # print("processing : {} samples".format(len(item_list)))
-        features = np.concatenate([item.feature for item in item_list], axis=0)
+        features = np.concatenate([np.expand_dims(item.feature, axis=0) for item in item_list], axis=0)
 
         action_probs, value = mcts_policy_async.net.predict(features)
         for p, v, item in zip(action_probs, value, item_list):
@@ -205,7 +205,7 @@ class TreeNode:
 class MCTS(object):
     """An implementation of Monte Carlo Tree Search."""
 
-    def __init__(self, policy_value_fn, c_puct=5, n_playout=10000, search_threads=32, virtual_loss=3,
+    def __init__(self, policy_value_fn, c_puct=5, n_playout=20, search_threads=32, virtual_loss=3,
                  policy_loop_arg=False, dnoise=False, ):
         """
         policy_value_fn: a function that takes in a board state and outputs
