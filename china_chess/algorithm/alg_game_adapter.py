@@ -1,10 +1,6 @@
-import numpy as np
-
+from china_chess.algorithm.icy_chess.game_state import GameState
 from china_chess.algorithm.mcts_async import *
 from othello.pytorch.NNet import NNetWrapper
-from china_chess.constant import *
-import copy
-from main import args
 from china_chess.algorithm.china_chese_game import *
 
 
@@ -23,7 +19,9 @@ class PolicyAdapter:
         return LETTERS[8 - column] + NUMBERS[row] + LETTERS[8 - end_column] + NUMBERS[end_row]
 
     def action_by_mcst(self, board):
-        return np.argmax(self.pmcts.get_move_probs(board, predict_workers=[prediction_worker(self.pmcts)]))
+        gs = GameState()
+        gs.from_integer_to_state_str(board)
+        return np.argmax(self.pmcts.get_move_probs(gs, predict_workers=[prediction_worker(self.pmcts)]))
 
     def get_next_policy(self, original_game_board_with_chess, c_player):
         ccb = ChinaChessBoard(None)

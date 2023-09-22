@@ -1,17 +1,79 @@
 import asyncio
+from asyncio.queues import Queue
 import time
 from collections import namedtuple
 
 import numpy as np
 import copy
-from asyncio.queues import Queue
 
-from china_chess.algorithm.china_chess_board import ChinaChessBoard
-from china_chess.algorithm.sl_net import NNetWrapper
-from china_chess.constant import LABELS, SL_MODEL_PATH
+from china_chess.algorithm.icy_chess.chess_board_from_icy import BaseChessBoard
+from china_chess.algorithm.icy_chess.common_board import flipped_uci_labels, create_uci_labels
+from china_chess.algorithm.icy_chess.game_board import GameBoard
+from china_chess.algorithm.icy_chess.game_convert import boardarr2netinput
 
-QueueItem = namedtuple("QueueItem", "feature future")
 queue = Queue(400)
+QueueItem = namedtuple("QueueItem", "feature future")
+uci_labels = create_uci_labels()
+async def push_queue(features, loop):
+    future = loop.create_future()
+    item = QueueItem(features, future)
+    await queue.put(item)
+    return future
+
+
+async def policy_value_fn_queue(state, loop):
+    bb = BaseChessBoard(state.state_str)
+    state_str = bb.get_board_arr()
+    net_x = np.transpose(boardarr2netinput(state_str, state.get_current_player()), [1, 2, 0])
+    net_x = np.expand_dims(net_x, 0)
+    future = await push_queue(net_x, loop)
+    await future
+    policy_out, val_out = future.result()
+    policy_out = [1] * 2086
+    # policyout,valout = sess.run([net_softmax,value_head],feed_dict={X:net_x,training:False})
+    # result = work.delay((state.statestr,state.get_current_player()))
+    # while True:
+    #    if result.ready():
+    #        policyout,valout = result.get()
+    #        break
+    #    else:
+    #        await asyncio.sleep(1e-3)
+    # policyout,valout = policyout[0],valout[0][0]
+    # policyout, valout = policyout, valout[0]
+    legal_move = GameBoard.get_legal_moves(state.state_str, state.get_current_player())
+    # if state.currentplayer == 'b':
+    #    legal_move = board.flipped_uci_labels(legal_move)
+    legal_move = set(legal_move)
+    legal_move_b = set(flipped_uci_labels(legal_move))
+
+    action_probs = []
+    if state.current_player == 'b':
+        for move, prob in zip(uci_labels, policy_out):
+            if move in legal_move_b:
+                move = flipped_uci_labels([move])[0]
+                action_probs.append((move, prob))
+    else:
+        for move, prob in zip(uci_labels, policy_out):
+            if move in legal_move:
+                action_probs.append((move, prob))
+    # action_probs = sorted(action_probs,key=lambda x:x[1])
+    return action_probs, val_out
+
+
+async def prediction_worker(mcts_policy_async):
+    q = queue
+    while mcts_policy_async.num_proceed < mcts_policy_async._n_playout:
+        if q.empty():
+            await asyncio.sleep(1e-3)
+            continue
+        item_list = [q.get_nowait() for _ in range(q.qsize())]
+        # print("processing : {} samples".format(len(item_list)))
+        features = np.concatenate([item.feature for item in item_list], axis=0)
+
+        # action_probs, value = sess.run([net_softmax, value_head], feed_dict={X: features, training: False})
+        action_probs, value = [1] * 2086, [1] * 2086
+        for p, v, item in zip(action_probs, value, item_list):
+            item.future.set_result((p, v))
 
 
 def softmax(x):
@@ -41,7 +103,7 @@ class TreeNode:
         action_priors: a list of tuples of actions and their prior probability
             according to the policy function.
         """
-        # dirichlet noise should be applied when every select action 
+        # dirichlet noise should be applied when every select action
         if False and self.noise == True and self._parent == None:
             # print("noise")
             noise_d = np.random.dirichlet([0.3] * len(action_priors))
@@ -112,59 +174,10 @@ class TreeNode:
         return self._parent is None
 
 
-async def push_queue(features, loop):
-    future = loop.create_future()
-    item = QueueItem(features, future)
-    await queue.put(item)
-    return future
-
-
-async def policy_value_fn_queue(state, loop):
-    b = ChinaChessBoard()
-    b.to_chess_map(state)
-    net_x = b.to_integer_map()
-    future = await push_queue(net_x, loop)
-    await future
-    policy_out, val_out = future.result()
-    policy_out, val_out = policy_out, val_out[0]
-    # TODO: get_current_player
-    legal_move = b.get_legal_moves("b")
-    legal_move = set(legal_move)
-    # TODO: flipped_uci_labels
-    # legal_move_b = set(board.flipped_uci_labels(legal_move))
-    legal_move_b = []
-    action_probs = []
-    if state.currentplayer == 'b':
-        for move, prob in zip(LABELS, policy_out):
-            if move in legal_move_b:
-                # TODO: flipped_uci_labels
-                # move = board.flipped_uci_labels([move])[0]
-                action_probs.append((move, prob))
-    else:
-        for move, prob in zip(LABELS, policy_out):
-            if move in legal_move:
-                action_probs.append((move, prob))
-    return action_probs, val_out
-
-
-async def prediction_worker(mcts_policy_async):
-    q = queue
-    while mcts_policy_async.num_proceed < mcts_policy_async._n_playout:
-        if q.empty():
-            await asyncio.sleep(1e-3)
-            continue
-        item_list = [q.get_nowait() for _ in range(q.qsize())]
-        features = np.concatenate([item.feature for item in item_list], axis=0)
-
-        action_probs, value = mcts_policy_async.nnet.predict(features)
-        for p, v, item in zip(action_probs, value, item_list):
-            item.future.set_result((p, v))
-
-
 class MCTS(object):
     """An implementation of Monte Carlo Tree Search."""
 
-    def __init__(self, policy_value_fn, c_puct=5, n_playout=2, search_threads=32, virtual_loss=3,
+    def __init__(self, policy_value_fn, c_puct=5, n_playout=10000, search_threads=32, virtual_loss=3,
                  policy_loop_arg=False, dnoise=False, ):
         """
         policy_value_fn: a function that takes in a board state and outputs
@@ -192,9 +205,6 @@ class MCTS(object):
         self.num_proceed = 0
         self.dnoise = dnoise
 
-        self.nnet = NNetWrapper()
-        self.nnet.load_checkpoint(folder=SL_MODEL_PATH, filename="best_loss.pth.tar")
-
     async def _playout(self, state):
         """Run a single playout from the root to the leaf, getting a value at
         the leaf and propagating it back through its parents.
@@ -203,7 +213,7 @@ class MCTS(object):
         async with self.sem:
             node = self._root
             road = []
-            while True:
+            while (1):
                 while node in self.now_expanding:
                     await asyncio.sleep(1e-4)
                 start = time.time()
@@ -216,21 +226,21 @@ class MCTS(object):
                 state.do_move(action)
                 self.select_time += (time.time() - start)
 
-            # # at leave node if long check or long catch then cut off the node
-            # if state.should_cutoff():
-            #     # cut off node
-            #     for one_node in road:
-            #         one_node.virtual_loss += self.virtual_loss
-            #     # now at this time, we do not update the entire tree branch, the accuracy loss is supposed to be small
-            #     # node.update_recursive(-leaf_value)
-            #
-            #     # set virtual loss to -inf so that other threads would not visit the same node again(so the node is cut off)
-            #     node.virtual_loss = - np.inf
-            #     # node.update_recursive(leaf_value)
-            #     self.update_time += (time.time() - start)
-            #     # however the proceed number still goes up 1
-            #     self.num_proceed += 1
-            #     return
+            # at leave node if long check or long catch then cut off the node
+            if state.should_cutoff():
+                # cut off node
+                for one_node in road:
+                    one_node.virtual_loss += self.virtual_loss
+                # now at this time, we do not update the entire tree branch, the accuracy loss is supposed to be small
+                # node.update_recursive(-leaf_value)
+
+                # set virtual loss to -inf so that other threads would not visit the same node again(so the node is cut off)
+                node.virtual_loss = - np.inf
+                # node.update_recursive(leaf_value)
+                self.update_time += (time.time() - start)
+                # however the proceed number still goes up 1
+                self.num_proceed += 1
+                return
 
             start = time.time()
             self.now_expanding.add(node)

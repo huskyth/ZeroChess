@@ -56,6 +56,19 @@ VALUE_TO_ABBREVIATION = {}
 for key in ABBREVIATION_TO_VALUE:
     VALUE_TO_ABBREVIATION[ABBREVIATION_TO_VALUE[key]] = key
 
+STATE_STR_TO_INTEGER = {
+    "r": -1, "n": -2, "b": -3, "a": -4, "k": -5,
+    "c": -6,
+    "p": -7,
+    "P": 7,
+    "C": 6,
+    "R": 1, "N": 2, "B": 3, "A": 4, "K": 5,
+}
+
+INTEGER_TO_STATE_STR = {}
+for k in STATE_STR_TO_INTEGER:
+    INTEGER_TO_STATE_STR[STATE_STR_TO_INTEGER[k]] = k
+
 NAME_TO_ENGLISH_CHAR = {
     '相': 'r_x',
     '卒': 'b_z',
