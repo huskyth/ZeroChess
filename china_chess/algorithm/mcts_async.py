@@ -10,15 +10,44 @@ from china_chess.algorithm.icy_chess.chess_board_from_icy import BaseChessBoard
 from china_chess.algorithm.icy_chess.common_board import flipped_uci_labels, create_uci_labels
 from china_chess.algorithm.icy_chess.game_board import GameBoard
 from china_chess.algorithm.icy_chess.game_convert import boardarr2netinput
+from china_chess.constant import SL_MODEL_PATH
+from othello.pytorch.NNet import NNetWrapper
 
 queue = Queue(400)
 QueueItem = namedtuple("QueueItem", "feature future")
 uci_labels = create_uci_labels()
+
+
 async def push_queue(features, loop):
     future = loop.create_future()
     item = QueueItem(features, future)
     await queue.put(item)
     return future
+
+
+async def policy_value_fn_queue_of_my_net(state, loop):
+    bb = BaseChessBoard(state.state_str)
+    state_str = bb.get_board_arr()
+    net_x = boardarr2netinput(state_str, state.get_current_player())[0]
+    future = await push_queue(net_x, loop)
+    await future
+    policy_out, val_out = future.result()
+    policy_out = [1] * 2086
+    legal_move = GameBoard.get_legal_moves(state.state_str, state.get_current_player())
+    legal_move = set(legal_move)
+    legal_move_b = set(flipped_uci_labels(legal_move))
+
+    action_probs = []
+    if state.current_player == 'b':
+        for move, prob in zip(uci_labels, policy_out):
+            if move in legal_move_b:
+                move = flipped_uci_labels([move])[0]
+                action_probs.append((move, prob))
+    else:
+        for move, prob in zip(uci_labels, policy_out):
+            if move in legal_move:
+                action_probs.append((move, prob))
+    return action_probs, val_out
 
 
 async def policy_value_fn_queue(state, loop):
@@ -70,8 +99,7 @@ async def prediction_worker(mcts_policy_async):
         # print("processing : {} samples".format(len(item_list)))
         features = np.concatenate([item.feature for item in item_list], axis=0)
 
-        # action_probs, value = sess.run([net_softmax, value_head], feed_dict={X: features, training: False})
-        action_probs, value = [1] * 2086, [1] * 2086
+        action_probs, value = mcts_policy_async.net.predict(features)
         for p, v, item in zip(action_probs, value, item_list):
             item.future.set_result((p, v))
 
@@ -205,6 +233,9 @@ class MCTS(object):
         self.num_proceed = 0
         self.dnoise = dnoise
 
+        self.net = NNetWrapper()
+        self.net.load_checkpoint(folder=SL_MODEL_PATH, filename="best_loss.pth.tar")
+
     async def _playout(self, state):
         """Run a single playout from the root to the leaf, getting a value at
         the leaf and propagating it back through its parents.
@@ -312,53 +343,3 @@ class MCTS(object):
 
     def __str__(self):
         return "MCTS"
-
-
-class MCTSPlayer(object):
-    """AI player based on MCTS"""
-
-    def __init__(self, policy_value_function,
-                 c_puct=5, n_playout=2000, is_selfplay=0):
-        self.mcts = MCTS(policy_value_function, c_puct, n_playout)
-        self._is_selfplay = is_selfplay
-
-    def set_player_ind(self, p):
-        self.player = p
-
-    def reset_player(self):
-        self.mcts.update_with_move(-1)
-
-    def get_action(self, board, temp=1e-3, return_prob=0):
-        sensible_moves = board.availables
-        # the pi vector returned by MCTS as in the alphaGo Zero paper
-        move_probs = np.zeros(board.width * board.height)
-        if len(sensible_moves) > 0:
-            acts, probs = self.mcts.get_move_probs(board, temp)
-            move_probs[list(acts)] = probs
-            if self._is_selfplay:
-                # add Dirichlet Noise for exploration (needed for
-                # self-play training)
-                move = np.random.choice(
-                    acts,
-                    p=0.75 * probs + 0.25 * np.random.dirichlet(0.3 * np.ones(len(probs)))
-                )
-                # update the root node and reuse the search tree
-                self.mcts.update_with_move(move)
-            else:
-                # with the default temp=1e-3, it is almost equivalent
-                # to choosing the move with the highest prob
-                move = np.random.choice(acts, p=probs)
-                # reset the root node
-                self.mcts.update_with_move(-1)
-            #                location = board.move_to_location(move)
-            #                print("AI move: %d,%d\n" % (location[0], location[1]))
-
-            if return_prob:
-                return move, move_probs
-            else:
-                return move
-        else:
-            print("WARNING: the board is full")
-
-    def __str__(self):
-        return "MCTS {}".format(self.player)

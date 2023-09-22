@@ -10,7 +10,7 @@ class PolicyAdapter:
         self.net = NNetWrapper()
         self.net.load_checkpoint(folder=SL_MODEL_PATH, filename="best_loss.pth.tar")
         self.game = ChinaChessGame()
-        self.pmcts = MCTS(policy_value_fn=policy_value_fn_queue, policy_loop_arg=True)
+        self.pmcts = MCTS(policy_value_fn=policy_value_fn_queue_of_my_net, policy_loop_arg=True)
 
     def _parse_move(self, string):
         return 9 - int(string[1]), LETTERS_TO_IND[string[0]], 9 - int(string[3]), LETTERS_TO_IND[string[2]],
