@@ -225,7 +225,7 @@ class MainEntrance:
             return False
 
     def _step_by_policy(self, player):
-        old_row, old_col, new_row, new_col = self.policy.get_next_policy(self.chessboard.chessboard_map, player)
+        old_row, old_col, new_row, new_col = self.policy.get_next_policy(player)
 
         if None in [old_row, old_col, new_row, new_col]:
             self.game.set_win('r' if player == 'b' else 'b')
@@ -260,7 +260,7 @@ class MainEntrance:
         if self.game.get_player() == 'r':
             temp = self._step_by_policy('r')
         else:
-            temp = self._step_by_policy('b')
+            temp = self._step_by_user()
         if temp:
             # 落子之后，交换走棋方
             self.game.exchange()
