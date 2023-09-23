@@ -28,7 +28,7 @@ async def push_queue(features, loop):
 async def policy_value_fn_queue_of_my_net(state, loop):
     bb = BaseChessBoard(state.state_str)
     state_str = bb.get_board_arr()
-    net_x = boardarr2netinput(state_str, state.get_current_player())[0]
+    net_x = boardarr2netinput(state_str, state.get_current_player())
     future = await push_queue(net_x, loop)
     await future
     policy_out, val_out = future.result()
@@ -204,7 +204,7 @@ class TreeNode:
 class MCTS(object):
     """An implementation of Monte Carlo Tree Search."""
 
-    def __init__(self, policy_value_fn, c_puct=5, n_playout=1, search_threads=32, virtual_loss=3,
+    def __init__(self, policy_value_fn, c_puct=5, n_playout=2000, search_threads=32, virtual_loss=3,
                  policy_loop_arg=False, dnoise=False, ):
         """
         policy_value_fn: a function that takes in a board state and outputs
