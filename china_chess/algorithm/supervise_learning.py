@@ -28,6 +28,7 @@ def main():
     for e_i in range(len(examples)):
         examples[e_i] = expand_data(examples[e_i])
 
+    nn.load_checkpoint(SL_MODEL_PATH, "best_loss.pth.tar")
     nn.train(examples)
 
 
