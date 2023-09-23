@@ -98,7 +98,7 @@ class NNetWrapper(NeuralNet):
                 eval_step += 1
 
                 sample_test_ids = np.random.randint(len(test_data), size=args.batch_size)
-                boards, pis, vs = list(zip(*[test_data[i] for i in sample_test_ids]))
+                boards, pis, vs, players = list(zip(*[test_data[i] for i in sample_test_ids]))
                 boards = torch.FloatTensor(np.array(boards).astype(np.float64))
                 target_pis = torch.FloatTensor(np.array(pis))
                 target_vs = torch.FloatTensor(np.array(vs).astype(np.float64))
