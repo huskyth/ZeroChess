@@ -20,7 +20,7 @@ args = dotdict({
     'lr': 0.001,
     'dropout': 0.3,
     'epochs': 200,
-    'batch_size': 256,
+    'batch_size': 64,
     'cuda': torch.cuda.is_available(),
     'num_channels': 128,
 })
@@ -63,7 +63,7 @@ class NNetWrapper(NeuralNet):
             for _ in t:
                 step += 1
                 sample_ids = np.random.randint(len(training_data), size=args.batch_size)
-                boards, pis, vs = list(zip(*[training_data[i] for i in sample_ids]))
+                boards, pis, vs, players = list(zip(*[training_data[i] for i in sample_ids]))
                 boards = torch.FloatTensor(np.array(boards).astype(np.float64))
                 target_pis = torch.FloatTensor(np.array(pis))
                 target_vs = torch.FloatTensor(np.array(vs).astype(np.float64))
