@@ -260,7 +260,7 @@ class MainEntrance:
         if self.game.get_player() == 'r':
             temp = self._step_by_policy('r')
         else:
-            temp = self._step_by_user()
+            temp = self._step_by_policy('b')
         if temp:
             # 落子之后，交换走棋方
             self.game.exchange()

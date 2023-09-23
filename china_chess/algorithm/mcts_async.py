@@ -32,7 +32,6 @@ async def policy_value_fn_queue_of_my_net(state, loop):
     future = await push_queue(net_x, loop)
     await future
     policy_out, val_out = future.result()
-    policy_out = [1] * 2086
     legal_move = GameBoard.get_legal_moves(state.state_str, state.get_current_player())
     legal_move = set(legal_move)
     legal_move_b = set(flipped_uci_labels(legal_move))
@@ -205,7 +204,7 @@ class TreeNode:
 class MCTS(object):
     """An implementation of Monte Carlo Tree Search."""
 
-    def __init__(self, policy_value_fn, c_puct=5, n_playout=20, search_threads=32, virtual_loss=3,
+    def __init__(self, policy_value_fn, c_puct=5, n_playout=1, search_threads=32, virtual_loss=3,
                  policy_loop_arg=False, dnoise=False, ):
         """
         policy_value_fn: a function that takes in a board state and outputs
@@ -244,7 +243,7 @@ class MCTS(object):
         async with self.sem:
             node = self._root
             road = []
-            while (1):
+            while True:
                 while node in self.now_expanding:
                     await asyncio.sleep(1e-4)
                 start = time.time()

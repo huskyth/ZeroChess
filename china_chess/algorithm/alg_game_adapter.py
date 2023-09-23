@@ -10,8 +10,7 @@ class PolicyAdapter:
         self.net = NNetWrapper()
         self.net.load_checkpoint(folder=SL_MODEL_PATH, filename="best_loss.pth.tar")
         self.game = ChinaChessGame()
-        self.w_mcts = MCTS(policy_value_fn=policy_value_fn_queue_of_my_net, policy_loop_arg=True)
-        self.b_mcts = MCTS(policy_value_fn=policy_value_fn_queue_of_my_net, policy_loop_arg=True)
+        self.mcts = MCTS(policy_value_fn=policy_value_fn_queue_of_my_net, policy_loop_arg=True)
         self.gs = GameState()
 
     def _parse_move(self, string):
@@ -21,17 +20,10 @@ class PolicyAdapter:
         return LETTERS[8 - column] + NUMBERS[row] + LETTERS[8 - end_column] + NUMBERS[end_row]
 
     def action_by_mcst(self, c_player):
-        if c_player == 'r':
-            acts, act_probs = self.w_mcts.get_move_probs(self.gs, predict_workers=[prediction_worker(self.w_mcts)])
-        elif c_player == 'b':
-            acts, act_probs = self.b_mcts.get_move_probs(self.gs, predict_workers=[prediction_worker(self.b_mcts)])
-        else:
-            raise Exception()
-
+        acts, act_probs = self.mcts.get_move_probs(self.gs, predict_workers=[prediction_worker(self.mcts)])
         move = acts[np.argmax(act_probs)]
         self.gs.do_move(move)
-        self.w_mcts.update_with_move(move, allow_legacy=False)
-        self.b_mcts.update_with_move(move, allow_legacy=False)
+        self.mcts.update_with_move(move, allow_legacy=False)
         return move
 
     def get_next_policy(self, c_player):
