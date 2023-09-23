@@ -4,9 +4,24 @@ import os
 import numpy as np
 import xmltodict
 
+from china_chess.constant import INTEGER_TO_STATE_STR
+
 currentpath = os.path.dirname(os.path.realpath(__file__))
 project_basedir = os.path.join(currentpath, '../..')
 sys.path.append(project_basedir)
+
+
+def integer_to_state_str(board):
+    temp = []
+    for x in board:
+        line = []
+        for y in x:
+            if y == 0:
+                line.append(None)
+            else:
+                line.append(INTEGER_TO_STATE_STR[y])
+        temp.append(line)
+    return temp
 
 
 def boardarr2netinput(board_arr, player, feature_list={"black": ['A', 'B', 'C', 'K', 'N', 'P', 'R']

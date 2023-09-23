@@ -210,7 +210,7 @@ class PGNParser:
                 value = 0
             else:
                 value = 1 if winner == RED_STRING else -1
-            temp = (b.to_integer_map(), build_pi, value)
+            temp = (b.to_integer_map(), build_pi, value, RED_STRING)
             data.append(temp)
             b.move_chess(row, col, end_row, end_col)
 
@@ -225,7 +225,7 @@ class PGNParser:
                 value = 0
             else:
                 value = 1 if winner == BLACK_STRING else -1
-            temp = (b.to_integer_map(), build_pi, value)
+            temp = (b.to_integer_map(), build_pi, value, BLACK_STRING)
             data.append(temp)
             b.move_chess(row, col, end_row, end_col)
             b.flip_up_down_and_left_right()

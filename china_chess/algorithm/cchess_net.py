@@ -19,7 +19,7 @@ class CChessNNet(nn.Module):
 
         super(CChessNNet, self).__init__()
 
-        self.conv1 = nn.Conv2d(1, out_channels=self.channel, kernel_size=3, stride=1, padding=1)
+        self.conv1 = nn.Conv2d(14, out_channels=self.channel, kernel_size=3, stride=1, padding=1)
         self.bn1 = nn.BatchNorm2d(self.channel)
         self.relu = F.relu
 
