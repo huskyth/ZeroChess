@@ -30,16 +30,16 @@ class NNetWrapper(NeuralNet):
         self.nnet = CChessNNet(args)
         self.board_x, self.board_y = 10, 9
         self.action_size = len(LABELS)
-        self.summary = MySummary()
         if args.cuda:
             self.nnet.cuda()
 
-    def train(self, examples):
+    def train(self, examples, iter):
         """
         examples: list of examples, each example is of form (board, pi, v)
         """
-        optimizer = optim.Adam(self.nnet.parameters())
+        optimizer = optim.Adam(self.nnet.parameters(), lr=0.001, weight_decay=0.01)
         step = 0
+        training_summary = MySummary("train_{}".format(iter))
         for epoch in range(args.epochs):
             print('EPOCH ::: ' + str(epoch + 1))
             self.nnet.train()
@@ -71,12 +71,13 @@ class NNetWrapper(NeuralNet):
                 pi_losses.update(l_pi.item(), boards.size(0))
                 v_losses.update(l_v.item(), boards.size(0))
                 t.set_postfix(Loss_pi=pi_losses, Loss_v=v_losses)
-                self.summary.add_float(step, pi_losses.avg, "Training Policy Loss")
-                self.summary.add_float(step, v_losses.avg, "Training Value Loss")
+                training_summary.add_float(step, pi_losses.avg, "Training Policy Loss")
+                training_summary.add_float(step, v_losses.avg, "Training Value Loss")
                 # compute gradient and do SGD step
                 optimizer.zero_grad()
                 total_loss.backward()
                 optimizer.step()
+        training_summary.close()
         self.save_checkpoint()
 
     def predict(self, board):

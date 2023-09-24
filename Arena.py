@@ -63,9 +63,7 @@ class Arena:
             is_end, winner = game_state.game_end()
             current_player.update_with_move(move)
             cur_player *= -1
-        if winner is None:
-            return 0
-        return 1 if winner == game_state.get_current_player() else -1
+        return winner
 
     def playGames(self, num):
         """
@@ -81,9 +79,10 @@ class Arena:
         draw_num = 0
         for _ in tqdm(range(num), desc="Arena.playGames"):
             game_result = self.playGame()
-            if game_result == 1:
+            assert game_result in ['w', 'b', None]
+            if game_result == 'w':
                 w = 1
-            elif game_result == -1:
+            elif game_result == 'b':
                 w = 0
             else:
                 draw_num += 1

@@ -32,7 +32,7 @@ class Coach:
         self.mcts = MCTS(policy_value_fn=policy_value_fn_queue_of_my_net, policy_loop_arg=True, net=self.nnet)
         self.trainExamplesHistory = []  # history of examples from args.numItersForTrainExamplesHistory latest iterations
         self.skipFirstSelfPlay = False  # can be overriden in loadTrainExamples()
-        self.summary = MySummary()
+        self.summary = MySummary("elo")
 
     def execute_episode(self, iter_number):
         """
@@ -120,7 +120,7 @@ class Coach:
             self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
             self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
             pmcts = MCTS(policy_value_fn=policy_value_fn_queue_of_my_net, policy_loop_arg=True, net=self.pnet)
-            self.nnet.train(trainExamples)
+            self.nnet.train(trainExamples, i)
             nmcts = MCTS(policy_value_fn=policy_value_fn_queue_of_my_net, policy_loop_arg=True, net=self.nnet)
 
             log.info('PITTING AGAINST PREVIOUS VERSION')
