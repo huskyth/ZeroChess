@@ -46,12 +46,12 @@ class Arena:
                 draw result returned from the game that is neither 1, -1, nor 0.
         """
         players = [self.player2, None, self.player1]
-        curPlayer = 1
+        cur_player = 1
         it = 0
         winner = None
         game_state = GameState()
         while not game_state.game_end()[0]:
-            current_player = players[curPlayer + 1]
+            current_player = players[cur_player + 1]
             it += 1
             acts, act_probs = current_player.get_move_probs(game_state, predict_workers=[
                 prediction_worker(current_player)])
@@ -62,7 +62,7 @@ class Arena:
             game_state.do_move(move)
             is_end, winner = game_state.game_end()
             current_player.update_with_move(move)
-            curPlayer *= -1
+            cur_player *= -1
         if winner is None:
             return 0
         return 1 if winner == game_state.get_current_player() else -1

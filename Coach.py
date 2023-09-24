@@ -34,7 +34,7 @@ class Coach:
         self.skipFirstSelfPlay = False  # can be overriden in loadTrainExamples()
         self.summary = MySummary()
 
-    def executeEpisode(self, iter_number):
+    def execute_episode(self, iter_number):
         """
         This function executes one episode of self-play, starting with player 1.
         As the game is played, each turn is added as a training example to
@@ -51,12 +51,11 @@ class Coach:
                            the player eventually won the game, else -1.
         """
         gs = GameState()
-        trainExamples = []
-        self.curPlayer = 1
-        episodeStep = 0
+        train_examples = []
+        episode_step = 0
         while True:
-            episodeStep += 1
-            temp = int(episodeStep < self.args.tempThreshold)
+            episode_step += 1
+            temp = int(episode_step < self.args.tempThreshold)
 
             acts, act_probs = self.mcts.get_move_probs(gs, predict_workers=[prediction_worker(self.mcts)], temp=temp)
 
@@ -67,17 +66,18 @@ class Coach:
             bb = BaseChessBoard(gs.state_str)
             state_str = bb.get_board_arr()
             net_x = boardarr2netinput(state_str, gs.get_current_player())
-            trainExamples.append([net_x, pi, None, gs.get_current_player()])
+            train_examples.append([net_x, pi, None, gs.get_current_player()])
+
             gs.do_move(move)
             is_end, winner = gs.game_end()
             self.mcts.update_with_move(move)
             if is_end:
-                for t in range(len(trainExamples)):
+                for t in range(len(train_examples)):
                     if winner == gs.current_player():
-                        trainExamples[t][2] = 1
+                        train_examples[t][2] = 1
                     else:
-                        trainExamples[t][2] = -1
-                return trainExamples
+                        train_examples[t][2] = -1
+                return train_examples
 
     def learn(self):
         """
@@ -97,7 +97,7 @@ class Coach:
 
                 for _ in tqdm(range(self.args.numEps), desc="Self Play"):
                     self.mcts.update_with_move(-1)  # reset search tree
-                    iterationTrainExamples += self.executeEpisode(i)
+                    iterationTrainExamples += self.execute_episode(i)
 
                 # save the iteration examples to the history 
                 self.trainExamplesHistory.append(iterationTrainExamples)
