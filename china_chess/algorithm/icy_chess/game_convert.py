@@ -24,8 +24,8 @@ def integer_to_state_str(board):
     return temp
 
 
-def boardarr2netinput(board_arr, player, feature_list={"black": ['A', 'B', 'C', 'K', 'N', 'P', 'R']
-    , "red": ['a', 'b', 'c', 'k', 'n', 'p', 'r']}):
+def boardarr2netinput(board_arr, player, feature_list={"red": ['A', 'B', 'C', 'K', 'N', 'P', 'R']
+    , "black": ['a', 'b', 'c', 'k', 'n', 'p', 'r']}):
     # chess picker features
     picker_x = []
     # picker_y = []

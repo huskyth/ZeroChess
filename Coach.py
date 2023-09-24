@@ -73,7 +73,7 @@ class Coach:
             self.mcts.update_with_move(move)
             if is_end:
                 for t in range(len(train_examples)):
-                    if winner == gs.current_player():
+                    if winner == gs.get_current_player():
                         train_examples[t][2] = 1
                     else:
                         train_examples[t][2] = -1

@@ -1,10 +1,11 @@
+from china_chess.algorithm.china_chess_board import ChinaChessBoard
 from china_chess.algorithm.icy_chess.game_board import GameBoard
-from china_chess.constant import INTEGER_TO_STATE_STR
+from china_chess.constant import INTEGER_TO_STATE_STR, MAP_WIDTH, MAP_HEIGHT, STATE_STR_TO_INTEGER
 
 
 class GameState:
     def __init__(self, enable_record_im=False):
-        self.state_str = 'RNBAKABNR/9/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c5c1/9/rnbakabnr'
+        self.state_str = 'rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR'
         self.current_player = 'w'
         self.ys = '9876543210'[::-1]
         self.xs = 'abcdefghi'
@@ -123,3 +124,31 @@ class GameState:
 
             temp += '/'
         self.state_str = temp[:-1]
+
+    def str_to_integer_map(self):
+        top_to_bottom = self.state_str.split('/')
+        result = [[0 for i in range(MAP_WIDTH)] for j in range(MAP_HEIGHT)]
+        cur_idx = 0
+
+        def get_row_column(idx):
+            return cur_idx // MAP_WIDTH, cur_idx - cur_idx // MAP_WIDTH * MAP_WIDTH
+
+        for line in top_to_bottom:
+            for cell in line:
+                if cell in '0123456789':
+                    n = int(cell)
+                    for i in range(n):
+                        row, column = get_row_column(cur_idx)
+                        result[row][column] = 0
+                        cur_idx += 1
+                else:
+                    row, column = get_row_column(cur_idx)
+                    result[row][column] = STATE_STR_TO_INTEGER[cell]
+                    cur_idx += 1
+        return result
+
+    def display(self):
+        b = ChinaChessBoard(None)
+        b.to_chess_map(self.str_to_integer_map())
+
+        return b.print_visible_string()
