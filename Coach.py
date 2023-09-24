@@ -55,7 +55,7 @@ class Coach:
         episode_step = 0
         while True:
             episode_step += 1
-            temp = int(episode_step < self.args.tempThreshold)
+            temp = int(episode_step < self.args.tempThreshold) + 1e-5
 
             acts, act_probs = self.mcts.get_move_probs(gs, predict_workers=[prediction_worker(self.mcts)], temp=temp)
 

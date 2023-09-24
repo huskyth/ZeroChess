@@ -39,7 +39,7 @@ class GameState:
         board = board.replace("8", "        ")
         board = board.replace("9", "         ")
         board = board.split('/')
-
+        K, k = None, None
         for i in range(3):
             pos = board[i].find('K')
             if pos != -1:
