@@ -9,9 +9,10 @@ import numpy as np
 from tqdm import tqdm
 
 from Arena import Arena
+from china_chess.algorithm.icy_chess.game_state import GameState
 from china_chess.algorithm.mcts_async import *
 from china_chess.algorithm.tensor_board_tool import MySummary
-from china_chess.constant import MAX_NOT_EAR_NUMBER
+from china_chess.constant import MAX_NOT_EAR_NUMBER, LABELS, LABELS_TO_INDEX
 import gc
 
 log = logging.getLogger(__name__)
@@ -28,7 +29,7 @@ class Coach:
         self.nnet = nnet
         self.pnet = self.nnet.__class__()  # the competitor network
         self.args = args
-        self.mcts = MCTS(self.game, self.nnet, self.args)
+        self.mcts = MCTS(policy_value_fn=policy_value_fn_queue_of_my_net, policy_loop_arg=True, net=self.nnet)
         self.trainExamplesHistory = []  # history of examples from args.numItersForTrainExamplesHistory latest iterations
         self.skipFirstSelfPlay = False  # can be overriden in loadTrainExamples()
         self.summary = MySummary()
@@ -49,37 +50,34 @@ class Coach:
                            pi is the MCTS informed policy vector, v is +1 if
                            the player eventually won the game, else -1.
         """
+        gs = GameState()
         trainExamples = []
-        board = self.game.getInitBoard()
         self.curPlayer = 1
         episodeStep = 0
-        sum_of_is_eat = 0
-        continue_list = []
         while True:
             episodeStep += 1
-            canonicalBoard = self.game.getCanonicalForm(board, self.curPlayer)
             temp = int(episodeStep < self.args.tempThreshold)
 
-            pi = self.mcts.getActionProb(canonicalBoard, iter_number, episodeStep, temp=temp)
+            acts, act_probs = self.mcts.get_move_probs(gs, predict_workers=[prediction_worker(self.mcts)], temp=temp)
 
-            sym = self.game.getSymmetries(canonicalBoard, pi)
-            for b, p in sym:
-                trainExamples.append([b, self.curPlayer, p, None])
-
-            action = np.random.choice(len(pi), p=pi)
-            board, self.curPlayer, is_eat = self.game.getNextState(board, self.curPlayer, action)
-            if is_eat:
-                sum_of_is_eat = 0
-            else:
-                sum_of_is_eat += is_eat
-            if len(continue_list) == 12:
-                del continue_list[0]
-            continue_list.append(action)
-
-            is_end, r = self.game.getGameEnded(board, self.curPlayer)
-
-            if is_end or sum_of_is_eat >= MAX_NOT_EAR_NUMBER or MCTS.is_draw(continue_list):
-                return [(x[0], x[2], r * ((-1) ** (x[1] != self.curPlayer))) for x in trainExamples]
+            action = np.random.choice(len(act_probs), p=act_probs)
+            move = acts[action]
+            pi = [0] * len(LABELS)
+            pi[LABELS_TO_INDEX[move]] = 1
+            bb = BaseChessBoard(gs.state_str)
+            state_str = bb.get_board_arr()
+            net_x = boardarr2netinput(state_str, gs.get_current_player())
+            trainExamples.append([net_x, pi, None, gs.get_current_player()])
+            gs.do_move(move)
+            is_end, winner = gs.game_end()
+            self.mcts.update_with_move(move)
+            if is_end:
+                for t in range(len(trainExamples)):
+                    if winner == gs.current_player():
+                        trainExamples[t][2] = 1
+                    else:
+                        trainExamples[t][2] = -1
+                return trainExamples
 
     def learn(self):
         """
@@ -98,7 +96,7 @@ class Coach:
                 iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
 
                 for _ in tqdm(range(self.args.numEps), desc="Self Play"):
-                    self.mcts = MCTS(self.game, self.nnet, self.args)  # reset search tree
+                    self.mcts.update_with_move(-1)  # reset search tree
                     iterationTrainExamples += self.executeEpisode(i)
 
                 # save the iteration examples to the history 
@@ -121,13 +119,13 @@ class Coach:
             # training new network, keeping a copy of the old one
             self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
             self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
-            pmcts = MCTS(self.game, self.pnet, self.args)
+            pmcts = MCTS(policy_value_fn=policy_value_fn_queue_of_my_net, policy_loop_arg=True, net=self.pnet)
             self.nnet.train(trainExamples)
-            nmcts = MCTS(self.game, self.nnet, self.args)
+            nmcts = MCTS(policy_value_fn=policy_value_fn_queue_of_my_net, policy_loop_arg=True, net=self.nnet)
 
             log.info('PITTING AGAINST PREVIOUS VERSION')
-            arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, i, -1, temp=0)),
-                          lambda x: np.argmax(nmcts.getActionProb(x, i, -1, temp=0)), self.game)
+            arena = Arena(pmcts,
+                          nmcts, self.game)
             red_elo_current, black_elo_current, draws = arena.playGames(self.args.arenaCompare)
 
             self.summary.add_float(x=i, y=red_elo_current, title='Red Elo')
