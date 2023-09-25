@@ -24,8 +24,7 @@ class Coach:
     in Game and NeuralNet. args are specified in bakeup_main.py.
     """
 
-    def __init__(self, game, nnet, args):
-        self.game = game
+    def __init__(self, nnet, args):
         self.nnet = nnet
         self.pnet = self.nnet.__class__()  # the competitor network
         self.args = args
@@ -124,8 +123,7 @@ class Coach:
             nmcts = MCTS(policy_value_fn=policy_value_fn_queue_of_my_net, policy_loop_arg=True, net=self.nnet)
 
             log.info('PITTING AGAINST PREVIOUS VERSION')
-            arena = Arena(pmcts,
-                          nmcts, self.game)
+            arena = Arena(pmcts, nmcts)
             red_elo_current, black_elo_current, draws = arena.playGames(self.args.arenaCompare)
 
             self.summary.add_float(x=i, y=red_elo_current, title='Red Elo')

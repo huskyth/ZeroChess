@@ -5,7 +5,8 @@ from china_chess.constant import INTEGER_TO_STATE_STR, MAP_WIDTH, MAP_HEIGHT, ST
 
 class GameState:
     def __init__(self, enable_record_im=False):
-        self.state_str = 'rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR'
+        # self.state_str = 'rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR'
+        self.state_str = 'RNBAKABNR/9/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c5c1/9/rnbakabnr'
         self.current_player = 'w'
         self.ys = '9876543210'[::-1]
         self.xs = 'abcdefghi'
