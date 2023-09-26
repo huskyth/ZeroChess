@@ -13,7 +13,7 @@ from china_chess.algorithm.file_writer import write_line
 from china_chess.algorithm.icy_chess.game_state import GameState
 from china_chess.algorithm.mcts_async import *
 from china_chess.algorithm.tensor_board_tool import MySummary
-from china_chess.constant import MAX_NOT_EAR_NUMBER, LABELS, LABELS_TO_INDEX
+from china_chess.constant import MAX_NOT_EAR_NUMBER, LABELS, LABELS_TO_INDEX, countpiece
 import gc
 
 log = logging.getLogger(__name__)
@@ -53,6 +53,9 @@ class Coach:
         gs = GameState()
         train_examples = []
         episode_step = 0
+
+        peace_round = 0
+        remain_piece = countpiece(gs.state_str)
         while True:
             episode_step += 1
             temp = int(episode_step < self.args.tempThreshold) + 1e-5
@@ -69,12 +72,29 @@ class Coach:
             train_examples.append([net_x, pi, None, gs.get_current_player()])
             current_player = gs.get_current_player()
             gs.do_move(move)
-            is_end, winner = gs.game_end()
+            is_end, winner, info = gs.game_end()
             self.mcts.update_with_move(move)
+
+            remain_piece_round = countpiece(gs.state_str)
+            if remain_piece_round < remain_piece:
+                remain_piece = remain_piece_round
+                peace_round = 0
+            else:
+                peace_round += 1
+
+            if episode_step > 150 and peace_round > 60:
+                for t in range(len(train_examples)):
+                    train_examples[t][2] = 0
+                temp = [x.strip() for x in gs.display()]
+                msg = str("\n".join(temp))
+                write_line(file_name="terminal", msg=msg, title="终结局面(和棋)：" + info)
+                return train_examples
+
             if is_end:
-                msg = gs.display() + "\n执行的行为是{}".format(move) + "\n执行该行为的玩家为{}".format(
+                temp = [x.strip() for x in gs.display()]
+                msg = str("\n".join(temp)) + "\n执行的行为是{}".format(move) + "\n执行该行为的玩家为{}".format(
                     current_player) + "\n当前玩家为{}".format(gs.get_current_player())
-                write_line(file_name="terminal", msg=msg, title="终结局面")
+                write_line(file_name="terminal", msg=msg, title="终结局面：" + info)
                 for t in range(len(train_examples)):
                     if winner == gs.get_current_player():
                         train_examples[t][2] = 1

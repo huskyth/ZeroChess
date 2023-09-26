@@ -18,7 +18,7 @@ from china_chess.algorithm.cchess_net import *
 args = dotdict({
     'lr': 0.001,
     'dropout': 0.5,
-    'epochs': 20,
+    'epochs': 80,
     'batch_size': 64,
     'cuda': torch.cuda.is_available(),
     'num_channels': 512,
@@ -37,7 +37,7 @@ class NNetWrapper(NeuralNet):
         """
         examples: list of examples, each example is of form (board, pi, v)
         """
-        optimizer = optim.Adam(self.nnet.parameters(), lr=0.001, weight_decay=0.01)
+        optimizer = optim.Adam(self.nnet.parameters(), lr=0.000001, weight_decay=0.01)
         step = 0
         training_summary = MySummary("train_{}".format(iter))
         for epoch in range(args.epochs):

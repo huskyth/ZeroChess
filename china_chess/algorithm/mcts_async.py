@@ -6,6 +6,7 @@ from collections import namedtuple
 import numpy as np
 import copy
 
+from china_chess.algorithm.file_writer import write_line
 from china_chess.algorithm.icy_chess.chess_board_from_icy import BaseChessBoard
 from china_chess.algorithm.icy_chess.common_board import flipped_uci_labels, create_uci_labels
 from china_chess.algorithm.icy_chess.game_board import GameBoard
@@ -46,45 +47,6 @@ async def policy_value_fn_queue_of_my_net(state, loop):
         for move, prob in zip(uci_labels, policy_out):
             if move in legal_move:
                 action_probs.append((move, prob))
-    return action_probs, val_out
-
-
-async def policy_value_fn_queue(state, loop):
-    bb = BaseChessBoard(state.state_str)
-    state_str = bb.get_board_arr()
-    net_x = np.transpose(boardarr2netinput(state_str, state.get_current_player()), [1, 2, 0])
-    net_x = np.expand_dims(net_x, 0)
-    future = await push_queue(net_x, loop)
-    await future
-    policy_out, val_out = future.result()
-    policy_out = [1] * 2086
-    # policyout,valout = sess.run([net_softmax,value_head],feed_dict={X:net_x,training:False})
-    # result = work.delay((state.statestr,state.get_current_player()))
-    # while True:
-    #    if result.ready():
-    #        policyout,valout = result.get()
-    #        break
-    #    else:
-    #        await asyncio.sleep(1e-3)
-    # policyout,valout = policyout[0],valout[0][0]
-    # policyout, valout = policyout, valout[0]
-    legal_move = GameBoard.get_legal_moves(state.state_str, state.get_current_player())
-    # if state.currentplayer == 'b':
-    #    legal_move = board.flipped_uci_labels(legal_move)
-    legal_move = set(legal_move)
-    legal_move_b = set(flipped_uci_labels(legal_move))
-
-    action_probs = []
-    if state.current_player == 'b':
-        for move, prob in zip(uci_labels, policy_out):
-            if move in legal_move_b:
-                move = flipped_uci_labels([move])[0]
-                action_probs.append((move, prob))
-    else:
-        for move, prob in zip(uci_labels, policy_out):
-            if move in legal_move:
-                action_probs.append((move, prob))
-    # action_probs = sorted(action_probs,key=lambda x:x[1])
     return action_probs, val_out
 
 
@@ -204,7 +166,7 @@ class TreeNode:
 class MCTS(object):
     """An implementation of Monte Carlo Tree Search."""
 
-    def __init__(self, policy_value_fn, c_puct=5, n_playout=1200, search_threads=32, virtual_loss=3,
+    def __init__(self, policy_value_fn, c_puct=5, n_playout=800, search_threads=64, virtual_loss=3,
                  policy_loop_arg=False, dnoise=False, net=None):
         """
         policy_value_fn: a function that takes in a board state and outputs
@@ -245,6 +207,8 @@ class MCTS(object):
         async with self.sem:
             node = self._root
             road = []
+            move = None
+            move_player = None
             while True:
                 while node in self.now_expanding:
                     await asyncio.sleep(1e-4)
@@ -255,6 +219,8 @@ class MCTS(object):
                 action, node = node.select(self._c_puct)
                 road.append(node)
                 node.virtual_loss -= self.virtual_loss
+                move = action
+                move_player = state.current_player
                 state.do_move(action)
                 self.select_time += (time.time() - start)
 
@@ -287,7 +253,7 @@ class MCTS(object):
 
             start = time.time()
             # Check for end of game.
-            end, winner = state.game_end()
+            end, winner, info = state.game_end()
             if not end:
                 node.expand(action_probs)
             else:
@@ -298,6 +264,12 @@ class MCTS(object):
                     leaf_value = (
                         1.0 if winner == state.get_current_player() else -1.0
                     )
+
+                temp = [x.strip() for x in state.display()]
+                msg = str("\n".join(temp)) + "\n执行的行为是{}".format(move) + "\n执行该行为的玩家为{}".format(
+                    move_player) + "\n当前玩家为{}".format(
+                    state.get_current_player()) + "\n评价该状态的value为{}".format(-leaf_value)
+                write_line(file_name="terminal_in_mcts_async", msg=msg, title="终结局面:" + info)
 
             # Update value and visit count of nodes in this traversal.
             for one_node in road:

@@ -19,7 +19,7 @@ from othello.pytorch.OthelloNNet import *
 args = dotdict({
     'lr': 0.001,
     'dropout': 0.3,
-    'epochs': 20000,
+    'epochs': 20,
     'batch_size': 64,
     'cuda': torch.cuda.is_available(),
     'num_channels': 128,
@@ -45,7 +45,7 @@ class NNetWrapper(NeuralNet):
         """
         examples: list of examples, each example is of form (board, pi, v)
         """
-        optimizer = optim.Adam(self.nnet.parameters(), lr=0.0000001, weight_decay=0.01)
+        optimizer = optim.Adam(self.nnet.parameters(), lr=0.00001, weight_decay=0.01)
         step = 0
         eval_step = 0
         pre_loss = float('inf')

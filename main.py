@@ -21,8 +21,8 @@ args = dotdict({
     'updateThreshold': 0.6,
     # During arena playoff, new neural net will be accepted if threshold or more of games are won.
     'maxlenOfQueue': 200000,  # Number of game examples to train the neural networks.
-    'arenaCompare': 10,  # Number of games to play during arena play to determine if new net will be accepted.
-    'cpuct': 5,
+    'arenaCompare': 1,  # Number of games to play during arena play to determine if new net will be accepted.
+    'cpuct': 2,
     'checkpoint': './temp/',
     'load_model': True,
     'load_folder_file': ('./temp/', 'best.pth.tar'),

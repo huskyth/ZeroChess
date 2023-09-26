@@ -49,6 +49,10 @@ class Arena:
         it = 0
         winner = None
         game_state = GameState()
+
+        peace_round = 0
+        remain_piece = countpiece(game_state.state_str)
+
         while not game_state.game_end()[0]:
             current_player = players[cur_player + 1]
             it += 1
@@ -57,11 +61,31 @@ class Arena:
 
             action = np.random.choice(len(act_probs), p=act_probs)
             move = acts[action]
-
+            show_current_player = game_state.get_current_player()
             game_state.do_move(move)
-            is_end, winner = game_state.game_end()
-            current_player.update_with_move(move)
+            is_end, winner, info = game_state.game_end()
+            current_player.update_with_move(-1)
             cur_player *= -1
+
+            remain_piece_round = countpiece(game_state.state_str)
+            if remain_piece_round < remain_piece:
+                remain_piece = remain_piece_round
+                peace_round = 0
+            else:
+                peace_round += 1
+
+            if it > 150 and peace_round > 60:
+                temp = [x.strip() for x in game_state.display()]
+                msg = str("\n".join(temp))
+                write_line(file_name="terminal_in_arena", msg=msg, title="终结局面(和棋)")
+                return None
+
+            if is_end:
+                temp = [x.strip() for x in game_state.display()]
+                msg = str("\n".join(temp)) + "\n执行的行为是{}".format(move) + "\n执行该行为的玩家为{}".format(
+                    show_current_player) + "\n当前玩家为{}".format(game_state.get_current_player())
+                write_line(file_name="terminal_in_arena", msg=msg, title="终结局面：" + info)
+                return winner
         return winner
 
     def playGames(self, num):

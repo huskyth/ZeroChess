@@ -126,3 +126,21 @@ def chess_from_chinese_to_english_char(chess_chinese_name, cur_player):
     if chess_chinese_name in PAO_MA_CHE_AFTER_ENGLISH:
         return cur_player + PAO_MA_CHE_AFTER_ENGLISH[chess_chinese_name]
     return NAME_TO_ENGLISH_CHAR[chess_chinese_name]
+
+
+pieceset = {'A',
+ 'B',
+ 'C',
+ 'K',
+ 'N',
+ 'P',
+ 'R',
+ 'a',
+ 'b',
+ 'c',
+ 'k',
+ 'n',
+ 'p',
+ 'r'}
+
+countpiece = lambda x: sum([1 for i in x if i in pieceset])

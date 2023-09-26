@@ -53,14 +53,14 @@ class GameState:
 
     def game_end(self):
         if self.state_str.find('k') == -1:
-            return True, 'w'
+            return True, 'w', "红获胜"
         elif self.state_str.find('K') == -1:
-            return True, 'b'
+            return True, 'b', "黑获胜"
         wk, bk = self.get_king_pos()
         # if self.max_repeat >= 3 and (self.last_move[-2:] != wk and self.last_move[-2:] != bk):
-        #    return True,self.get_current_player()
+        #     return True, self.get_current_player()
         # if self.max_repeat >= 4:
-        #    return True,self.get_current_player()#-1
+        #     return True, self.get_current_player()  # -1
         target_king_dic = {'b': wk, 'w': bk}
         move_set = GameBoard.get_legal_moves(self.state_str, self.get_current_player())
 
@@ -68,8 +68,8 @@ class GameState:
 
         targ_king = target_king_dic[self.current_player]
         if targ_king in target_set:
-            return True, self.current_player
-        return False, None
+            return True, self.current_player, "targ_king in target_set"
+        return False, None, ""
 
     def get_current_player(self):
         return self.current_player
