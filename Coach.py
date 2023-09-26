@@ -58,7 +58,10 @@ class Coach:
         remain_piece = countpiece(gs.state_str)
         while True:
             episode_step += 1
-            temp = int(episode_step < self.args.tempThreshold) + 1e-5
+            if episode_step < 12 or gs.max_repeat > 1:
+                temp = 1
+            else:
+                temp = 1e-2
 
             acts, act_probs = self.mcts.get_move_probs(gs, predict_workers=[prediction_worker(self.mcts)], temp=temp)
 
@@ -110,7 +113,6 @@ class Coach:
         It then pits the new neural network against the old one and accepts it
         only if it wins >= updateThreshold fraction of games.
         """
-        red_elo = 0
         for i in range(1, self.args.numIters + 1):
             # bookkeeping
             log.info(f'Starting Iter #{i} ...')
@@ -148,13 +150,12 @@ class Coach:
 
             log.info('PITTING AGAINST PREVIOUS VERSION')
             arena = Arena(pmcts, nmcts)
-            red_elo_current, black_elo_current, draws = arena.playGames(self.args.arenaCompare)
-
+            red_elo_current, black_elo_current, draws, red_win, black_win = arena.playGames(self.args.arenaCompare)
             self.summary.add_float(x=i, y=red_elo_current, title='Red Elo')
             self.summary.add_float(x=i, y=black_elo_current, title='Black Elo')
+            self.summary.add_float(x=i, y=red_win / self.args.arenaCompare, title='Red Win Rate')
             log.info('DRAWS : %d' % (draws / self.args.arenaCompare))
-            if red_elo_current > red_elo:
-                red_elo = red_elo_current
+            if red_win > black_win:
                 log.info('ACCEPTING NEW MODEL')
                 self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
                 self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')

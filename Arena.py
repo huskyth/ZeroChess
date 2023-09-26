@@ -56,8 +56,13 @@ class Arena:
         while not game_state.game_end()[0]:
             current_player = players[cur_player + 1]
             it += 1
+            if it < 12 or game_state.max_repeat > 1:
+                temp = 1
+            else:
+                temp = 1e-2
+
             acts, act_probs = current_player.get_move_probs(game_state, predict_workers=[
-                prediction_worker(current_player)])
+                prediction_worker(current_player)], temp=temp)
 
             action = np.random.choice(len(act_probs), p=act_probs)
             move = acts[action]
@@ -100,13 +105,17 @@ class Arena:
         """
         self.player1, self.player2 = self.player2, self.player1
         draw_num = 0
+        red_win = 0
+        black_win = 0
         for _ in tqdm(range(num), desc="Arena.playGames"):
             game_result = self.playGame()
             assert game_result in ['w', 'b', None]
             if game_result == 'w':
                 w = 1
+                red_win += 1
             elif game_result == 'b':
                 w = 0
+                black_win += 1
             else:
                 draw_num += 1
                 w = 0.3
@@ -114,4 +123,4 @@ class Arena:
             self.elo_red, self.elo_black = compute_elo(self.elo_red, self.elo_black, w)
 
         # TODO://with error
-        return self.elo_red, self.elo_black, draw_num
+        return self.elo_red, self.elo_black, draw_num, red_win, black_win

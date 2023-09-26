@@ -123,6 +123,7 @@ class NNetWrapper(NeuralNet):
                 print("保存最好的模型")
                 pre_loss = pi_test_losses.avg + v_test_losses.avg
                 self.save_checkpoint(filename="best_loss.pth.tar")
+        self.load_checkpoint(filename="best_loss.pth.tar")
 
     def predict(self, board):
         """
