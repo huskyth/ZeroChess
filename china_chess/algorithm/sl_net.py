@@ -31,12 +31,11 @@ class NNetWrapper(NeuralNet):
         self.nnet = CChessNNet(args)
         self.board_x, self.board_y = 10, 9
         self.action_size = len(LABELS)
-        self.summary = MySummary()
         if args.cuda:
             print("使用了CUDA")
             self.nnet.cuda()
 
-    def train(self, examples):
+    def train(self, examples, iter_num):
         n = int(len(examples) * 0.8)
         shuffle(examples)
 
@@ -50,6 +49,7 @@ class NNetWrapper(NeuralNet):
         step = 0
         eval_step = 0
         pre_loss = float('inf')
+        loss_summary = MySummary("Pi Loss {}".format(iter_num))
         for epoch in range(args.epochs):
 
             print('EPOCH ::: ' + str(epoch + 1))
@@ -82,8 +82,8 @@ class NNetWrapper(NeuralNet):
                 pi_losses.update(l_pi.item(), boards.size(0))
                 v_losses.update(l_v.item(), boards.size(0))
                 t.set_postfix(Loss_pi=pi_losses, Loss_v=v_losses)
-                self.summary.add_float(step, pi_losses.avg, "Training Policy Loss")
-                self.summary.add_float(step, v_losses.avg, "Training Value Loss")
+                loss_summary.add_float(step, pi_losses.avg, "Training Policy Loss")
+                loss_summary.add_float(step, v_losses.avg, "Training Value Loss")
                 # compute gradient and do SGD step
                 optimizer.zero_grad()
                 total_loss.backward()
@@ -116,8 +116,8 @@ class NNetWrapper(NeuralNet):
                 # record loss
                 pi_test_losses.update(l_pi.item(), boards.size(0))
                 v_test_losses.update(l_v.item(), boards.size(0))
-                self.summary.add_float(eval_step, pi_test_losses.avg, "Testing Policy Loss")
-                self.summary.add_float(eval_step, v_test_losses.avg, "Testing Value Loss")
+                loss_summary.add_float(eval_step, pi_test_losses.avg, "Testing Policy Loss")
+                loss_summary.add_float(eval_step, v_test_losses.avg, "Testing Value Loss")
 
             if pi_test_losses.avg + v_test_losses.avg < pre_loss:
                 print("保存最好的模型")
@@ -134,13 +134,13 @@ class NNetWrapper(NeuralNet):
         # preparing input
         board = torch.FloatTensor(board.astype(np.float64))
         if args.cuda: board = board.contiguous().cuda()
-        board = board.view(1, self.board_x, self.board_y)
+        board = board.view(-1, self.board_x, self.board_y)
         self.nnet.eval()
         with torch.no_grad():
             pi, v = self.nnet(board)
 
         # print('PREDICTION TIME TAKEN : {0:03f}'.format(time.time()-start))
-        return torch.exp(pi).data.cpu().numpy()[0], v.data.cpu().numpy()[0]
+        return torch.exp(pi).data.cpu().numpy(), v.data.cpu().numpy()
 
     def loss_pi(self, targets, outputs):
         return -torch.sum(targets * outputs) / targets.size()[0]
