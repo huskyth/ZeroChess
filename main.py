@@ -7,7 +7,7 @@ import coloredlogs
 
 from Coach import Coach
 from china_chess.algorithm.china_chese_game import *
-from othello.pytorch.NNet import NNetWrapper as nn
+from china_chess.algorithm.sl_net import NNetWrapper as nn
 from utils import *
 
 log = logging.getLogger(__name__)
