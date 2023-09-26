@@ -9,6 +9,7 @@ import numpy as np
 from tqdm import tqdm
 
 from Arena import Arena
+from china_chess.algorithm.file_writer import write_line
 from china_chess.algorithm.icy_chess.game_state import GameState
 from china_chess.algorithm.mcts_async import *
 from china_chess.algorithm.tensor_board_tool import MySummary
@@ -66,11 +67,14 @@ class Coach:
             state_str = bb.get_board_arr()
             net_x = boardarr2netinput(state_str, gs.get_current_player())
             train_examples.append([net_x, pi, None, gs.get_current_player()])
-
+            current_player = gs.get_current_player()
             gs.do_move(move)
             is_end, winner = gs.game_end()
             self.mcts.update_with_move(move)
             if is_end:
+                msg = gs.display() + "\n执行的行为是{}".format(move) + "\n执行该行为的玩家为{}".format(
+                    current_player) + "\n当前玩家为{}".format(gs.get_current_player())
+                write_line(file_name="terminal", msg=msg, title="终结局面")
                 for t in range(len(train_examples)):
                     if winner == gs.get_current_player():
                         train_examples[t][2] = 1
