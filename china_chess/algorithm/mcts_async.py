@@ -11,6 +11,7 @@ from china_chess.algorithm.icy_chess.chess_board_from_icy import BaseChessBoard
 from china_chess.algorithm.icy_chess.common_board import flipped_uci_labels, create_uci_labels
 from china_chess.algorithm.icy_chess.game_board import GameBoard
 from china_chess.algorithm.icy_chess.game_convert import boardarr2netinput
+from china_chess.algorithm.icy_chess.game_state import GameState
 from china_chess.constant import SL_MODEL_PATH
 from othello.pytorch.NNet import NNetWrapper
 
@@ -77,7 +78,7 @@ class TreeNode:
     its visit-count-adjusted prior score u.
     """
 
-    def __init__(self, parent, prior_p, noise=False):
+    def __init__(self, parent, prior_p, state, noise=False):
         self._parent = parent
         self._children = {}  # a map from action to TreeNode
         self._n_visits = 0
@@ -86,6 +87,7 @@ class TreeNode:
         self._P = prior_p
         self.virtual_loss = 0
         self.noise = noise
+        self.state = state
 
     def expand(self, action_priors):
         """Expand tree by creating new children.
@@ -99,11 +101,15 @@ class TreeNode:
             for (action, prob), one_noise in zip(action_priors, noise_d):
                 if action not in self._children:
                     prob = (1 - 0.25) * prob + 0.25 * one_noise
-                    self._children[action] = TreeNode(self, prob, noise=self.noise)
+                    next_state = copy.deepcopy(self.state)
+                    next_state.do_move(action)
+                    self._children[action] = TreeNode(self, prob, next_state, noise=self.noise)
         else:
             for action, prob in action_priors:
                 if action not in self._children:
-                    self._children[action] = TreeNode(self, prob)
+                    next_state = copy.deepcopy(self.state)
+                    next_state.do_move(action)
+                    self._children[action] = TreeNode(self, prob, next_state)
 
     def select(self, c_puct):
         """Select action among children that gives maximum action value Q
@@ -177,7 +183,7 @@ class MCTS(object):
             converges to the maximum-value policy. A higher value means
             relying on the prior more.
         """
-        self._root = TreeNode(None, 1.0, noise=dnoise)
+        self._root = TreeNode(None, 1.0, GameState(), noise=dnoise)
         self._policy = policy_value_fn
         self._c_puct = c_puct
         self._n_playout = n_playout
@@ -280,7 +286,7 @@ class MCTS(object):
             self.update_time += (time.time() - start)
             self.num_proceed += 1
 
-    def get_move_probs(self, state, temp=1e-3, verbose=False, predict_workers=[], can_apply_dnoise=False):
+    def get_move_probs(self, state, temp=0, verbose=False, predict_workers=[], can_apply_dnoise=False):
         """Run all playouts sequentially and return the available actions and
         their corresponding probabilities.
         state: the current game state
@@ -299,9 +305,18 @@ class MCTS(object):
         act_visits = [(act, node._n_visits)
                       for act, node in self._root._children.items()]
         acts, visits = zip(*act_visits)
-        act_probs = softmax(1.0 / temp * np.log(np.array(visits) + 1e-10))
 
-        return acts, act_probs
+        if temp == 0:
+            bestAs = np.array(np.argwhere(visits == np.max(visits))).flatten()
+            bestA = np.random.choice(bestAs)
+            return acts[bestA]
+
+        counts = [x ** (1. / temp) for x in visits]
+        counts_sum = float(sum(counts))
+        probs = [x / counts_sum for x in counts]
+        aMove = np.random.choice(probs)
+
+        return acts[aMove]
 
     def update_with_move(self, last_move, allow_legacy=True):
         """Step forward in the tree, keeping everything we already know
@@ -312,7 +327,8 @@ class MCTS(object):
             self._root = self._root._children[last_move]
             self._root._parent = None
         else:
-            self._root = TreeNode(None, 1.0, noise=self.dnoise)
+            init = GameState()
+            self._root = TreeNode(None, 1.0, init, noise=self.dnoise)
 
     def __str__(self):
         return "MCTS"

@@ -56,16 +56,9 @@ class Arena:
         while not game_state.game_end()[0]:
             current_player = players[cur_player + 1]
             it += 1
-            if it < 12 or game_state.max_repeat > 1:
-                temp = 1
-            else:
-                temp = 1e-2
 
-            acts, act_probs = current_player.get_move_probs(game_state, predict_workers=[
-                prediction_worker(current_player)], temp=temp)
-
-            action = np.random.choice(len(act_probs), p=act_probs)
-            move = acts[action]
+            move = current_player.get_move_probs(game_state, predict_workers=[
+                prediction_worker(current_player)])
             show_current_player = game_state.get_current_player()
             game_state.do_move(move)
             is_end, winner, info = game_state.game_end()

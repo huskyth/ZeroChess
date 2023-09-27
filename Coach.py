@@ -58,15 +58,9 @@ class Coach:
         remain_piece = countpiece(gs.state_str)
         while True:
             episode_step += 1
-            if episode_step < 12 or gs.max_repeat > 1:
-                temp = 1
-            else:
-                temp = 1e-2
+            temp = int(episode_step < self.args.tempThreshold)
 
-            acts, act_probs = self.mcts.get_move_probs(gs, predict_workers=[prediction_worker(self.mcts)], temp=temp)
-
-            action = np.random.choice(len(act_probs), p=act_probs)
-            move = acts[action]
+            move = self.mcts.get_move_probs(gs, predict_workers=[prediction_worker(self.mcts)], temp=temp)
             pi = [0] * len(LABELS)
             pi[LABELS_TO_INDEX[move]] = 1
             bb = BaseChessBoard(gs.state_str)
