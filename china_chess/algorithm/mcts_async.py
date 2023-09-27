@@ -314,7 +314,7 @@ class MCTS(object):
         counts = [x ** (1. / temp) for x in visits]
         counts_sum = float(sum(counts))
         probs = [x / counts_sum for x in counts]
-        aMove = np.random.choice(probs)
+        aMove = np.random.choice(len(probs), p=probs)
 
         return acts[aMove]
 
