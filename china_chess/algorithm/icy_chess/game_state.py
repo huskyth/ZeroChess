@@ -57,10 +57,10 @@ class GameState:
         elif self.state_str.find('K') == -1:
             return True, 'b', "黑获胜"
         wk, bk = self.get_king_pos()
-        # if self.max_repeat >= 3 and (self.last_move[-2:] != wk and self.last_move[-2:] != bk):
-        #     return True, self.get_current_player()
-        # if self.max_repeat >= 4:
-        #     return True, self.get_current_player()  # -1
+        if self.max_repeat >= 3 and (self.last_move[-2:] != wk and self.last_move[-2:] != bk):
+            return True, self.get_current_player(), "重复大于等于3"
+        if self.max_repeat >= 4:
+            return True, self.get_current_player(), "重复大于等于4"
         target_king_dic = {'b': wk, 'w': bk}
         move_set = GameBoard.get_legal_moves(self.state_str, self.get_current_player())
 
