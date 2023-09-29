@@ -3,6 +3,14 @@ from asyncio.queues import Queue
 import time
 from collections import namedtuple
 
+try:
+    import uvloop
+    print("uvloop detected, using")
+
+    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+except:
+    print("uvloop not detected, ignoring")
+    pass
 import numpy as np
 import copy
 

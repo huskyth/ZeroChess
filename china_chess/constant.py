@@ -34,11 +34,13 @@ LOGGER_PATH = Path(__file__).parent / "logger"
 
 MAX_NOT_EAR_NUMBER = 60
 LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
+REVERSE_LETTERS = LETTERS[::-1]
 LETTERS_TO_IND = {}
 for i, x in enumerate(LETTERS):
     LETTERS_TO_IND[x] = i
 
 NUMBERS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+REVERSE_NUMBERS = NUMBERS[::-1]
 NUMBERS_TO_IND = {}
 for i, x in enumerate(NUMBERS):
     NUMBERS_TO_IND[x] = i

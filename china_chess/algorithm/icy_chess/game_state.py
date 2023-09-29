@@ -148,8 +148,8 @@ class GameState:
                     cur_idx += 1
         return result
 
-    def display(self):
+    def display(self, is_print_screen=False):
         b = ChinaChessBoard(None)
         b.to_chess_map(self.str_to_integer_map())
 
-        return b.print_visible_string()
+        return b.print_visible_string(is_print_screen=True)
