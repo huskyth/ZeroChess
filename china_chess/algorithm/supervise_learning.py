@@ -1,3 +1,12 @@
+from pathlib import Path
+import os.path
+import sys
+
+from china_chess.algorithm.tensor_board_tool import MySummary
+
+path = str(Path(os.path.abspath(__file__)).parent.parent.parent)
+sys.path.append(path)
+
 from china_chess.algorithm.data_loader import LoadData
 
 from china_chese_game import *

@@ -1,5 +1,5 @@
 from pathlib import Path
-
+import os
 abbreviation_to_chinese = {
     "b_c": '黑车', "b_m": "黑马", "b_x": "黑相", "b_s": "黑士", "b_j": "黑将",
     "b_p": "黑炮",
@@ -28,7 +28,10 @@ SUMMARY_PATH = Path(__file__).parent / "summary"
 SL_MODEL_PATH = Path(__file__).parent / "algorithm" / "checkpoint"
 BEST_MODEL_PATH = Path(__file__).parent.parent / "temp"
 NEWS_MODEL_PATH = Path(__file__).parent.parent / "checkpoint"
-
+if not os.path.exists(SUMMARY_PATH):
+    os.mkdir(SUMMARY_PATH)
+if not os.path.exists(SL_MODEL_PATH):
+    os.mkdir(SL_MODEL_PATH)
 IMAGE_PATH = Path(__file__).parent
 LOGGER_PATH = Path(__file__).parent / "logger"
 
