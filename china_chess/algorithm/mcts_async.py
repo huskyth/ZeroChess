@@ -186,8 +186,8 @@ class TreeNode:
 class MCTS(object):
     """An implementation of Monte Carlo Tree Search."""
 
-    def __init__(self, policy_value_fn, c_puct=5, n_playout=100, search_threads=256, virtual_loss=3,
-                 policy_loop_arg=False, dnoise=False, net=None):
+    def __init__(self, policy_value_fn, c_puct=5, n_playout=10, search_threads=256, virtual_loss=3,
+                 policy_loop_arg=False, dnoise=False, net=None, name="MCTS"):
         """
         policy_value_fn: a function that takes in a board state and outputs
             a list of (action, probability) tuples and also a score in [-1, 1]
@@ -216,6 +216,7 @@ class MCTS(object):
 
         # self.net = NNetWrapper()
         # self.net.load_checkpoint(folder=SL_MODEL_PATH, filename="best_loss.pth.tar")
+        self.name = name
 
         self.net = net
 
@@ -342,7 +343,9 @@ class MCTS(object):
             self._root._parent = None
         else:
             init = GameState()
+            if last_move != -1:
+                init.do_move(last_move)
             self._root = TreeNode(None, 1.0, init, noise=self.dnoise)
 
     def __str__(self):
-        return "MCTS"
+        return "MCTS" + " " + self.name
