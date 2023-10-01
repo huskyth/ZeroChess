@@ -2,10 +2,9 @@ from pathlib import Path
 import os.path
 import sys
 
-from china_chess.algorithm.tensor_board_tool import MySummary
-
 path = str(Path(os.path.abspath(__file__)).parent.parent.parent)
 sys.path.append(path)
+print(sys.path)
 
 from china_chess.algorithm.data_loader import LoadData
 
@@ -88,7 +87,7 @@ def main():
         flipped = flip_all(board[0], pi, v, player, ano_gs)
         examples.append(flipped)
 
-    # nn.load_checkpoint(SL_MODEL_PATH, "best_loss.pth.tar")
+    nn.load_checkpoint(filename="best_loss.pth.tar")
     nn.train(examples, 0)
 
 

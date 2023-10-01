@@ -19,7 +19,7 @@ from othello.pytorch.OthelloNNet import *
 args = dotdict({
     'lr': 0.001,
     'dropout': 0.3,
-    'epochs': 20,
+    'epochs': 2000,
     'batch_size': 64,
     'cuda': torch.cuda.is_available(),
     'num_channels': 128,
@@ -45,7 +45,7 @@ class NNetWrapper(NeuralNet):
         """
         examples: list of examples, each example is of form (board, pi, v)
         """
-        optimizer = optim.Adam(self.nnet.parameters(), lr=0.00001, weight_decay=0.01)
+        optimizer = optim.Adam(self.nnet.parameters(), lr=0.0000001, weight_decay=0.01)
         step = 0
         eval_step = 0
         pre_loss = float('inf')
@@ -163,6 +163,7 @@ class NNetWrapper(NeuralNet):
     def load_checkpoint(self, folder='checkpoint', filename='checkpoint.pth.tar'):
         # https://github.com/pytorch/examples/blob/master/imagenet/main.py#L98
         filepath = os.path.join(folder, filename)
+        print(filepath)
         if not os.path.exists(filepath):
             raise ("No model in path {}".format(filepath))
         map_location = None if args.cuda else 'cpu'
