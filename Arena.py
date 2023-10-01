@@ -55,6 +55,7 @@ class Arena:
 
         while not game_state.game_end()[0]:
             current_player = players[cur_player + 1]
+            another_player = players[1 - cur_player]
             it += 1
 
             move = current_player.get_move_probs(game_state, predict_workers=[
@@ -62,7 +63,8 @@ class Arena:
             show_current_player = game_state.get_current_player()
             game_state.do_move(move)
             is_end, winner, info = game_state.game_end()
-            current_player.update_with_move(-1)
+            current_player.update_with_move(move)
+            another_player.update_with_move(move)
             cur_player *= -1
 
             remain_piece_round = countpiece(game_state.state_str)
