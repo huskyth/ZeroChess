@@ -87,7 +87,7 @@ def main():
         flipped = flip_all(board[0], pi, v, player, ano_gs)
         examples.append(flipped)
 
-    nn.load_checkpoint(filename="best_loss.pth.tar")
+    nn.load_checkpoint(filename="best.pth.tar")
     nn.train(examples, 0)
 
 

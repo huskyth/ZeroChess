@@ -98,7 +98,7 @@ class ChinaChessGame(Game):
             player = -1
 
         if self._debug_filter(b.to_integer_map()):
-            print()
+            pass
         # return a fixed size binary vector
         valids = [0] * self.getActionSize()
         assert player in [1, -1]

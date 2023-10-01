@@ -5,8 +5,7 @@ import logging
 
 import coloredlogs
 
-from Coach import Coach
-from china_chess.algorithm.china_chese_game import *
+from coach_pool import Coach
 from china_chess.algorithm.sl_net import NNetWrapper as nn
 from utils import *
 

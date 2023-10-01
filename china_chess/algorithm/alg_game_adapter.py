@@ -8,7 +8,7 @@ class PolicyAdapter:
 
     def __init__(self):
         self.net = NNetWrapper()
-        self.net.load_checkpoint(folder=SL_MODEL_PATH, filename="best_loss.pth.tar")
+        self.net.load_checkpoint(folder=SL_MODEL_PATH, filename="best.pth.tar")
         self.game = ChinaChessGame()
         self.mcts = MCTS(policy_value_fn=policy_value_fn_queue_of_my_net, policy_loop_arg=True, net=self.net)
         self.gs = GameState()
