@@ -152,4 +152,4 @@ class GameState:
         b = ChinaChessBoard(None)
         b.to_chess_map(self.str_to_integer_map())
 
-        return b.print_visible_string(is_print_screen=True)
+        return b.print_visible_string(is_print_screen=is_print_screen)

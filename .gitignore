@@ -7,7 +7,7 @@
 
 # checkpoint
 checkpoints/
-checkpoint/
+china_chess/algorithm/checkpoint/
 
 # For PyCharm users
 .idea/

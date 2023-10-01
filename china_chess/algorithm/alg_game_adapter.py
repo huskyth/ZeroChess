@@ -10,7 +10,7 @@ class PolicyAdapter:
         self.net = NNetWrapper()
         self.net.load_checkpoint(folder=SL_MODEL_PATH, filename="best_loss.pth.tar")
         self.game = ChinaChessGame()
-        self.mcts = MCTS(policy_value_fn=policy_value_fn_queue_of_my_net, policy_loop_arg=True)
+        self.mcts = MCTS(policy_value_fn=policy_value_fn_queue_of_my_net, policy_loop_arg=True, net=self.net)
         self.gs = GameState()
 
     def _parse_move(self, string):
@@ -20,8 +20,7 @@ class PolicyAdapter:
         return LETTERS[8 - column] + NUMBERS[row] + LETTERS[8 - end_column] + NUMBERS[end_row]
 
     def action_by_mcst(self, c_player):
-        acts, act_probs = self.mcts.get_move_probs(self.gs, predict_workers=[prediction_worker(self.mcts)])
-        move = acts[np.argmax(act_probs)]
+        move = self.mcts.get_move_probs(self.gs, predict_workers=[prediction_worker(self.mcts)])
         self.gs.do_move(move)
         self.mcts.update_with_move(move, allow_legacy=False)
         return move
