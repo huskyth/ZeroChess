@@ -79,6 +79,11 @@ class Coach:
             else:
                 peace_round += 1
 
+            temp = [x.strip() for x in gs.display()]
+            msg = str("\n".join(temp)) + "\n执行的行为是{}".format(move) + "\n执行该行为的玩家为{}".format(
+                current_player) + "\n当前玩家为{}".format(gs.get_current_player())
+            write_line(file_name="process" + str(iter_number), msg=msg, title="过程：" + info)
+
             if episode_step > 150 and peace_round > 60:
                 for t in range(len(train_examples)):
                     train_examples[t][2] = 0
@@ -138,9 +143,11 @@ class Coach:
             # training new network, keeping a copy of the old one
             self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
             self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
-            pmcts = MCTS(policy_value_fn=policy_value_fn_queue_of_my_net, policy_loop_arg=True, net=self.pnet, name="p-mcts")
+            pmcts = MCTS(policy_value_fn=policy_value_fn_queue_of_my_net, policy_loop_arg=True, net=self.pnet,
+                         name="p-mcts")
             self.nnet.train(trainExamples, i)
-            nmcts = MCTS(policy_value_fn=policy_value_fn_queue_of_my_net, policy_loop_arg=True, net=self.nnet, name="n-mcts")
+            nmcts = MCTS(policy_value_fn=policy_value_fn_queue_of_my_net, policy_loop_arg=True, net=self.nnet,
+                         name="n-mcts")
 
             log.info('PITTING AGAINST PREVIOUS VERSION')
             arena = Arena(pmcts, nmcts)
