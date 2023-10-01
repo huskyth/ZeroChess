@@ -1,9 +1,11 @@
+import threading
 import time
+from collections import defaultdict
 
 import numpy as np
 import copy
 import threadpool
-
+from threading import Lock
 from china_chess.algorithm.file_writer import write_line
 from china_chess.algorithm.icy_chess.chess_board_from_icy import BaseChessBoard
 from china_chess.algorithm.icy_chess.common_board import flipped_uci_labels, create_uci_labels
@@ -141,7 +143,6 @@ class MCTS(object):
         self._n_playout = n_playout
         self.virtual_loss = virtual_loss
         self.task_pool = threadpool.ThreadPool(search_threads)
-        self.now_expanding = set()
 
         self.select_time = 0
         self.policy_time = 0
@@ -152,6 +153,9 @@ class MCTS(object):
         self.name = name
 
         self.net = net
+        self.lock = Lock()
+
+        self.test = set()
 
     def _playout(self, state):
         """Run a single playout from the root to the leaf, getting a value at
@@ -164,8 +168,6 @@ class MCTS(object):
             move = None
             move_player = None
             while True:
-                while node in self.now_expanding:
-                    time.sleep(1e-4)
                 start = time.time()
                 if node.is_leaf():
                     break
@@ -190,10 +192,14 @@ class MCTS(object):
                 return
 
             start = time.time()
-            self.now_expanding.add(node)
 
             action_probs, leaf_value = self._policy(state)
             self.policy_time += (time.time() - start)
+
+            if node in self.test:
+                print("collision " + threading.currentThread().name + " " + str(id(node)))
+            else:
+                self.test.add(node)
 
             start = time.time()
             end, winner, info = state.game_end()
@@ -219,7 +225,6 @@ class MCTS(object):
             node.update_recursive(-leaf_value)
             # node.update_recursive(leaf_value)
             self.update_time += (time.time() - start)
-            self.now_expanding.remove(node)
 
     def get_move_probs(self, state, temp=0, can_apply_dnoise=False):
         """Run all playouts sequentially and return the available actions and
@@ -283,12 +288,12 @@ class MCTS(object):
 
         action_probs = []
         if state.current_player == 'b':
-            for move, prob in zip(uci_labels, policy_out):
+            for move, prob in zip(uci_labels, policy_out[0]):
                 if move in legal_move_b:
                     move = flipped_uci_labels([move])[0]
                     action_probs.append((move, prob))
         else:
-            for move, prob in zip(uci_labels, policy_out):
+            for move, prob in zip(uci_labels, policy_out[0]):
                 if move in legal_move:
                     action_probs.append((move, prob))
         return action_probs, val_out

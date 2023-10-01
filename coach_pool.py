@@ -76,6 +76,11 @@ class Coach:
             else:
                 peace_round += 1
 
+            temp = [x.strip() for x in gs.display()]
+            msg = str("\n".join(temp)) + "\n执行的行为是{}".format(move) + "\n执行该行为的玩家为{}".format(
+                current_player) + "\n当前玩家为{}".format(gs.get_current_player())
+            write_line(file_name="process" + str(iter_number), msg=msg, title="过程：" + info)
+
             if episode_step > 150 and peace_round > 60:
                 for t in range(len(train_examples)):
                     train_examples[t][2] = 0
