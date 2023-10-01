@@ -6,7 +6,7 @@
 /.pydevproject
 
 # checkpoint
-checkpoint/
+#checkpoint/
 china_chess/algorithm/checkpoint/
 
 # For PyCharm users
