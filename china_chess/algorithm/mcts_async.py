@@ -5,6 +5,7 @@ from collections import namedtuple
 
 try:
     import uvloop
+
     print("uvloop detected, using")
 
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
@@ -104,7 +105,6 @@ class TreeNode:
         """
         # dirichlet noise should be applied when every select action
         if False and self.noise == True and self._parent == None:
-            # print("noise")
             noise_d = np.random.dirichlet([0.3] * len(action_priors))
             for (action, prob), one_noise in zip(action_priors, noise_d):
                 if action not in self._children:
@@ -125,8 +125,13 @@ class TreeNode:
         Return: A tuple of (action, next_node)
         """
         if not self.noise:
-            return max(self._children.items(),
-                       key=lambda act_node: act_node[1].get_value(c_puct))
+            max_move = max(self._children.items(),
+                           key=lambda act_node: act_node[1].get_value(c_puct))
+            state_temp = copy.deepcopy(self.state)
+            state_temp.do_move(max_move[0])
+            if state_temp.game_end()[0] is True:
+                print()
+            return max_move
         elif self.noise and self._parent is not None:
             return max(self._children.items(),
                        key=lambda act_node: act_node[1].get_value(c_puct))
@@ -163,6 +168,7 @@ class TreeNode:
         if noise_p is None:
             self._u = (c_puct * self._P *
                        np.sqrt(self._parent._n_visits) / (1 + self._n_visits))
+            # print("Q={},U={},VL={}".format(self._Q, self._u, self.virtual_loss))
             return self._Q + self._u + self.virtual_loss
         else:
             self._u = (c_puct * (self._P * 0.75 + noise_p * 0.25) *
@@ -180,7 +186,7 @@ class TreeNode:
 class MCTS(object):
     """An implementation of Monte Carlo Tree Search."""
 
-    def __init__(self, policy_value_fn, c_puct=5, n_playout=800, search_threads=256, virtual_loss=3,
+    def __init__(self, policy_value_fn, c_puct=5, n_playout=100, search_threads=256, virtual_loss=3,
                  policy_loop_arg=False, dnoise=False, net=None):
         """
         policy_value_fn: a function that takes in a board state and outputs

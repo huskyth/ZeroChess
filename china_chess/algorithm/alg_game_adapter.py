@@ -22,7 +22,7 @@ class PolicyAdapter:
     def action_by_mcst(self, c_player):
         move = self.mcts.get_move_probs(self.gs, predict_workers=[prediction_worker(self.mcts)])
         self.gs.do_move(move)
-        self.mcts.update_with_move(move, allow_legacy=False)
+        self.mcts.update_with_move(move, allow_legacy=True)
         return move
 
     def get_next_policy(self, c_player):
