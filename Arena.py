@@ -1,10 +1,7 @@
 import logging
 
 from tqdm import tqdm
-import MCTS
-from china_chess.algorithm.icy_chess.chess_board_from_icy import BaseChessBoard
 from china_chess.algorithm.icy_chess.game_state import GameState
-from china_chess.algorithm.mcts_async import prediction_worker
 
 log = logging.getLogger(__name__)
 from china_chess.algorithm.china_chess_board import *

@@ -5,16 +5,13 @@ from collections import deque
 from pickle import Pickler, Unpickler
 from random import shuffle
 
-import numpy as np
-from tqdm import tqdm
-
 from Arena import Arena
-from china_chess.algorithm.file_writer import write_line
-from china_chess.algorithm.icy_chess.game_state import GameState
+
 from china_chess.algorithm.mcts_async import *
 from china_chess.algorithm.tensor_board_tool import MySummary
-from china_chess.constant import MAX_NOT_EAR_NUMBER, LABELS, LABELS_TO_INDEX, countpiece
+from china_chess.constant import LABELS, LABELS_TO_INDEX, countpiece
 import gc
+from concurrent.futures import ProcessPoolExecutor
 
 log = logging.getLogger(__name__)
 
@@ -29,12 +26,11 @@ class Coach:
         self.nnet = nnet
         self.pnet = self.nnet.__class__()  # the competitor network
         self.args = args
-        self.mcts = MCTS(policy_value_fn=policy_value_fn_queue_of_my_net, policy_loop_arg=True, net=self.nnet)
         self.trainExamplesHistory = []  # history of examples from args.numItersForTrainExamplesHistory latest iterations
         self.skipFirstSelfPlay = False  # can be overriden in loadTrainExamples()
         self.summary = MySummary("elo")
 
-    def execute_episode(self, iter_number):
+    def execute_episode(self, iter_number, mcts):
         """
         This function executes one episode of self-play, starting with player 1.
         As the game is played, each turn is added as a training example to
@@ -60,7 +56,7 @@ class Coach:
             episode_step += 1
             temp = int(episode_step < self.args.tempThreshold)
 
-            move = self.mcts.get_move_probs(gs, predict_workers=[prediction_worker(self.mcts)], temp=temp)
+            move = mcts.get_move_probs(gs, temp=temp)
             pi = [0] * len(LABELS)
             pi[LABELS_TO_INDEX[move]] = 1
             bb = BaseChessBoard(gs.state_str)
@@ -70,7 +66,7 @@ class Coach:
             current_player = gs.get_current_player()
             gs.do_move(move)
             is_end, winner, info = gs.game_end()
-            self.mcts.update_with_move(move)
+            mcts.update_with_move(move)
 
             remain_piece_round = countpiece(gs.state_str)
             if remain_piece_round < remain_piece:
@@ -117,15 +113,16 @@ class Coach:
             log.info(f'Starting Iter #{i} ...')
             # examples of the iteration
             if not self.skipFirstSelfPlay or i > 1:
-                iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
-                num_eps = 0
-                for _ in tqdm(range(self.args.numEps), desc="Self Play"):
-                    num_eps += 1
-                    self.mcts.update_with_move(-1)  # reset search tree
-                    iterationTrainExamples += self.execute_episode(num_eps)
+                with ProcessPoolExecutor(max_workers=self.args.numEps) as executor:
+                    futures = []
+                    for i in range(10):
+                        mcts = MCTS(policy_loop_arg=True, net=self.nnet)
+                        futures.append(executor.submit(self.execute_episode, i, mcts))
+
+                for r in futures:
+                    self.trainExamplesHistory.append(r.result())
 
                 # save the iteration examples to the history 
-                self.trainExamplesHistory.append(iterationTrainExamples)
 
             if len(self.trainExamplesHistory) > self.args.numItersForTrainExamplesHistory:
                 log.warning(
@@ -144,10 +141,10 @@ class Coach:
             # training new network, keeping a copy of the old one
             self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
             self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
-            pmcts = MCTS(policy_value_fn=policy_value_fn_queue_of_my_net, policy_loop_arg=True, net=self.pnet,
+            pmcts = MCTS(policy_loop_arg=True, net=self.pnet,
                          name="p-mcts")
             self.nnet.train(trainExamples, i)
-            nmcts = MCTS(policy_value_fn=policy_value_fn_queue_of_my_net, policy_loop_arg=True, net=self.nnet,
+            nmcts = MCTS(policy_loop_arg=True, net=self.nnet,
                          name="n-mcts")
 
             log.info('PITTING AGAINST PREVIOUS VERSION')

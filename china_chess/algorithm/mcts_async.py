@@ -21,58 +21,9 @@ from china_chess.algorithm.icy_chess.common_board import flipped_uci_labels, cre
 from china_chess.algorithm.icy_chess.game_board import GameBoard
 from china_chess.algorithm.icy_chess.game_convert import boardarr2netinput
 from china_chess.algorithm.icy_chess.game_state import GameState
-from china_chess.constant import SL_MODEL_PATH
-from othello.pytorch.NNet import NNetWrapper
 
-queue = Queue(400)
 QueueItem = namedtuple("QueueItem", "feature future")
 uci_labels = create_uci_labels()
-
-
-async def push_queue(features, loop):
-    future = loop.create_future()
-    item = QueueItem(features, future)
-    await queue.put(item)
-    return future
-
-
-async def policy_value_fn_queue_of_my_net(state, loop):
-    bb = BaseChessBoard(state.state_str)
-    state_str = bb.get_board_arr()
-    net_x = boardarr2netinput(state_str, state.get_current_player())
-    future = await push_queue(net_x, loop)
-    await future
-    policy_out, val_out = future.result()
-    legal_move = GameBoard.get_legal_moves(state.state_str, state.get_current_player())
-    legal_move = set(legal_move)
-    legal_move_b = set(flipped_uci_labels(legal_move))
-
-    action_probs = []
-    if state.current_player == 'b':
-        for move, prob in zip(uci_labels, policy_out):
-            if move in legal_move_b:
-                move = flipped_uci_labels([move])[0]
-                action_probs.append((move, prob))
-    else:
-        for move, prob in zip(uci_labels, policy_out):
-            if move in legal_move:
-                action_probs.append((move, prob))
-    return action_probs, val_out
-
-
-async def prediction_worker(mcts_policy_async):
-    q = queue
-    while mcts_policy_async.num_proceed < mcts_policy_async._n_playout:
-        if q.empty():
-            await asyncio.sleep(1e-3)
-            continue
-        item_list = [q.get_nowait() for _ in range(q.qsize())]
-        # print("processing : {} samples".format(len(item_list)))
-        features = np.concatenate([np.expand_dims(item.feature, axis=0) for item in item_list], axis=0)
-
-        action_probs, value = mcts_policy_async.net.predict(features)
-        for p, v, item in zip(action_probs, value, item_list):
-            item.future.set_result((p, v))
 
 
 def softmax(x):
@@ -186,7 +137,7 @@ class TreeNode:
 class MCTS(object):
     """An implementation of Monte Carlo Tree Search."""
 
-    def __init__(self, policy_value_fn, c_puct=5, n_playout=1200, search_threads=1024, virtual_loss=3,
+    def __init__(self, c_puct=5, n_playout=12, search_threads=10, virtual_loss=3,
                  policy_loop_arg=False, dnoise=False, net=None, name="MCTS"):
         """
         policy_value_fn: a function that takes in a board state and outputs
@@ -198,7 +149,7 @@ class MCTS(object):
             relying on the prior more.
         """
         self._root = TreeNode(None, 1.0, GameState(), noise=dnoise)
-        self._policy = policy_value_fn
+        self._policy = self.policy_value_fn_queue_of_my_net
         self._c_puct = c_puct
         self._n_playout = n_playout
         self.virtual_loss = virtual_loss
@@ -219,6 +170,49 @@ class MCTS(object):
         self.name = name
 
         self.net = net
+        self.q = Queue(400)
+
+    async def push_queue(self, features, loop):
+        future = loop.create_future()
+        item = QueueItem(features, future)
+        await self.q.put(item)
+        return future
+
+    async def policy_value_fn_queue_of_my_net(self, state, loop):
+        bb = BaseChessBoard(state.state_str)
+        state_str = bb.get_board_arr()
+        net_x = boardarr2netinput(state_str, state.get_current_player())
+        future = await self.push_queue(net_x, loop)
+        await future
+        policy_out, val_out = future.result()
+        legal_move = GameBoard.get_legal_moves(state.state_str, state.get_current_player())
+        legal_move = set(legal_move)
+        legal_move_b = set(flipped_uci_labels(legal_move))
+
+        action_probs = []
+        if state.current_player == 'b':
+            for move, prob in zip(uci_labels, policy_out):
+                if move in legal_move_b:
+                    move = flipped_uci_labels([move])[0]
+                    action_probs.append((move, prob))
+        else:
+            for move, prob in zip(uci_labels, policy_out):
+                if move in legal_move:
+                    action_probs.append((move, prob))
+        return action_probs, val_out
+
+    async def prediction_worker(self):
+        while self.num_proceed < self._n_playout:
+            if self.q.empty():
+                await asyncio.sleep(1e-3)
+                continue
+            item_list = [self.q.get_nowait() for _ in range(self.q.qsize())]
+            # print("processing : {} samples".format(len(item_list)))
+            features = np.concatenate([np.expand_dims(item.feature, axis=0) for item in item_list], axis=0)
+
+            action_probs, value = self.net.predict(features)
+            for p, v, item in zip(action_probs, value, item_list):
+                item.future.set_result((p, v))
 
     async def _playout(self, state):
         """Run a single playout from the root to the leaf, getting a value at
@@ -301,7 +295,7 @@ class MCTS(object):
             self.update_time += (time.time() - start)
             self.num_proceed += 1
 
-    def get_move_probs(self, state, temp=0, verbose=False, predict_workers=[], can_apply_dnoise=False):
+    def get_move_probs(self, state, temp=0, can_apply_dnoise=False):
         """Run all playouts sequentially and return the available actions and
         their corresponding probabilities.
         state: the current game state
@@ -313,7 +307,7 @@ class MCTS(object):
         for n in range(self._n_playout):
             state_copy = copy.deepcopy(state)
             coroutine_list.append(self._playout(state_copy))
-        coroutine_list += predict_workers
+        coroutine_list += [self.prediction_worker()]
         self.loop.run_until_complete(asyncio.gather(*coroutine_list))
 
         # calc the move probabilities based on visit counts at the root node
