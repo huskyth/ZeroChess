@@ -73,12 +73,12 @@ class Arena:
             temp = [x.strip() for x in game_state.display()]
             msg = str("\n".join(temp)) + "\n执行的行为是{}".format(move) + "\n执行该行为的玩家为{}".format(
                 show_current_player) + "\n当前玩家为{}".format(game_state.get_current_player())
-            write_line(file_name="terminal_in_arena_process" + str(turns) + str(iter), msg=msg,
-                       title="过程：" + info)
+            write_line(file_name="_playGame_procedure_" + str(turns) + str(iter), msg=msg,
+                       title="在playGame方法中的过程：" + info)
             if it > 150 and peace_round > 60:
                 temp = [x.strip() for x in game_state.display()]
                 msg = str("\n".join(temp))
-                write_line(file_name="terminal_in_arena", msg=msg, title="终结局面(和棋)")
+                write_line(file_name="_playGame_terminal_", msg=msg, title="在playGame方法中的终结局面(和棋)")
                 current_player.update_with_move(-1)
                 another_player.update_with_move(-1)
                 return None
@@ -87,7 +87,7 @@ class Arena:
                 temp = [x.strip() for x in game_state.display()]
                 msg = str("\n".join(temp)) + "\n执行的行为是{}".format(move) + "\n执行该行为的玩家为{}".format(
                     show_current_player) + "\n当前玩家为{}".format(game_state.get_current_player())
-                write_line(file_name="terminal_in_arena", msg=msg, title="终结局面：" + info)
+                write_line(file_name="_playGame_terminal_", msg=msg, title="在playGame方法中的终结局面：" + info)
                 current_player.update_with_move(-1)
                 another_player.update_with_move(-1)
                 return winner

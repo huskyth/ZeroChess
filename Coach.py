@@ -79,21 +79,21 @@ class Coach:
             temp = [x.strip() for x in gs.display()]
             msg = str("\n".join(temp)) + "\n执行的行为是{}".format(move) + "\n执行该行为的玩家为{}".format(
                 current_player) + "\n当前玩家为{}".format(gs.get_current_player())
-            write_line(file_name="process" + str(numIters) + "_" + str(iter_number), msg=msg, title="过程：" + info)
+            write_line(file_name="_execute_episode_procedure_" + str(numIters) + "_" + str(iter_number), msg=msg, title="在execute_episode方法中的过程：" + info)
 
             if episode_step > 150 and peace_round > 60:
                 for t in range(len(train_examples)):
                     train_examples[t][2] = 0
                 temp = [x.strip() for x in gs.display()]
                 msg = str("\n".join(temp))
-                write_line(file_name="terminal", msg=msg, title="终结局面(和棋)：" + info)
+                write_line(file_name="_execute_episode_terminal_", msg=msg, title="在execute_episode方法中的终结局面(和棋)：" + info)
                 return train_examples
 
             if is_end:
                 temp = [x.strip() for x in gs.display()]
                 msg = str("\n".join(temp)) + "\n执行的行为是{}".format(move) + "\n执行该行为的玩家为{}".format(
                     current_player) + "\n当前玩家为{}".format(gs.get_current_player())
-                write_line(file_name="terminal", msg=msg, title="终结局面：" + info)
+                write_line(file_name="_execute_episode_terminal_", msg=msg, title="在execute_episode方法中的终结局面：" + info)
                 for t in range(len(train_examples)):
                     if winner == gs.get_current_player():
                         train_examples[t][2] = 1
@@ -160,6 +160,11 @@ class Coach:
             else:
                 log.info('REJECTING NEW MODEL')
                 self.nnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
+
+            del trainExamples
+            del pmcts
+            del nmcts
+            del arena
             gc.collect()
 
     def getCheckpointFile(self, iteration):
