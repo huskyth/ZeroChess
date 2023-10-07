@@ -5,13 +5,14 @@ from collections import deque
 from pickle import Pickler, Unpickler
 from random import shuffle
 
+from tqdm import tqdm
+
 from Arena import Arena
 
 from china_chess.algorithm.mcts_async import *
 from china_chess.algorithm.tensor_board_tool import MySummary
 from china_chess.constant import LABELS, LABELS_TO_INDEX, countpiece
 import gc
-from concurrent.futures import ProcessPoolExecutor
 
 log = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ class Coach:
         self.skipFirstSelfPlay = False  # can be overriden in loadTrainExamples()
         self.summary = MySummary("elo")
 
-    def execute_episode(self, iter_number, mcts):
+    def execute_episode(self, numIters, iter_number, mcts):
         """
         This function executes one episode of self-play, starting with player 1.
         As the game is played, each turn is added as a training example to
@@ -78,7 +79,7 @@ class Coach:
             temp = [x.strip() for x in gs.display()]
             msg = str("\n".join(temp)) + "\n执行的行为是{}".format(move) + "\n执行该行为的玩家为{}".format(
                 current_player) + "\n当前玩家为{}".format(gs.get_current_player())
-            write_line(file_name="process" + str(iter_number), msg=msg, title="过程：" + info)
+            write_line(file_name="process" + str(numIters) + "_" + str(iter_number), msg=msg, title="过程：" + info)
 
             if episode_step > 150 and peace_round > 60:
                 for t in range(len(train_examples)):
@@ -108,22 +109,20 @@ class Coach:
         It then pits the new neural network against the old one and accepts it
         only if it wins >= updateThreshold fraction of games.
         """
+        mcts = MCTS(policy_loop_arg=True, net=self.nnet)
         for i in range(1, self.args.numIters + 1):
             # bookkeeping
             log.info(f'Starting Iter #{i} ...')
             # examples of the iteration
             if not self.skipFirstSelfPlay or i > 1:
-                with ProcessPoolExecutor(max_workers=self.args.numEps) as executor:
-                    futures = []
-                    for i in range(10):
-                        mcts = MCTS(policy_loop_arg=True, net=self.nnet)
-                        futures.append(executor.submit(self.execute_episode, i, mcts))
+                iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
+                for j in tqdm(range(self.args.numEps), desc="Self Play"):
+                    mcts.update_with_move(-1)
+                    iterationTrainExamples += self.execute_episode(i, j, mcts)
 
-                for r in futures:
-                    self.trainExamplesHistory.append(r.result())
+                self.trainExamplesHistory.append(iterationTrainExamples)
 
-                # save the iteration examples to the history 
-
+                # save the iteration examples to the history
             if len(self.trainExamplesHistory) > self.args.numItersForTrainExamplesHistory:
                 log.warning(
                     f"Removing the oldest entry in trainExamples. len(trainExamplesHistory) = {len(self.trainExamplesHistory)}")
@@ -149,7 +148,7 @@ class Coach:
 
             log.info('PITTING AGAINST PREVIOUS VERSION')
             arena = Arena(pmcts, nmcts)
-            red_elo_current, black_elo_current, draws, red_win, black_win = arena.playGames(self.args.arenaCompare)
+            red_elo_current, black_elo_current, draws, red_win, black_win = arena.playGames(self.args.arenaCompare, i)
             self.summary.add_float(x=i, y=red_elo_current, title='Red Elo')
             self.summary.add_float(x=i, y=black_elo_current, title='Black Elo')
             self.summary.add_float(x=i, y=red_win / self.args.arenaCompare, title='Red Win Rate')

@@ -336,9 +336,11 @@ class MCTS(object):
             self._root = self._root._children[last_move]
             self._root._parent = None
         else:
-            init = GameState()
+            init = copy.deepcopy(self._root.state)
             if last_move != -1:
                 init.do_move(last_move)
+            else:
+                init = GameState()
             self._root = TreeNode(None, 1.0, init, noise=self.dnoise)
 
     def __str__(self):

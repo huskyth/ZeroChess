@@ -82,7 +82,7 @@ class GameState:
 
     def do_move(self, move):
         self.last_move = move
-        self.state_str = GameBoard.sim_do_action(move, self.state_str)
+        self.state_str = GameBoard.sim_do_action(move, self.state_str, self)
         if self.current_player == 'w':
             self.current_player = 'b'
         elif self.current_player == 'b':

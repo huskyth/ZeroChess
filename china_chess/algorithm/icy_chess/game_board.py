@@ -1,5 +1,7 @@
 import numpy as np
 
+from china_chess.algorithm.file_writer import write_line
+
 
 def create_position_labels():
     labels_array = []
@@ -83,7 +85,7 @@ class GameBoard(object):
         # print(board)
 
     @staticmethod
-    def sim_do_action(in_action, in_state):
+    def sim_do_action(in_action, in_state, origin_state):
         x_trans = {'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7, 'i': 8}
 
         src = in_action[0:2]
@@ -106,6 +108,35 @@ class GameBoard(object):
         # print(lines.shape)
         # print(board_positions[src_y])
         # print("before board_positions[dst_y] = ",board_positions[dst_y])
+
+        temp = [x.strip() for x in origin_state.display()]
+        msg = str("\n".join(temp))
+        error = False
+        if lines[src_y][src_x] == '1':
+            msg += "\n" + "原位置没棋子"
+            error = True
+        ws = 'RNBAKABNRCP'
+        bs = 'pcrnbakabnr'
+        src_ = None
+        if lines[src_y][src_x] in ws:
+            src_ = 'w'
+        elif lines[src_y][src_x] in bs:
+            src_ = 'b'
+
+        if lines[dst_y][dst_x] in ws:
+            dst_ = 'w'
+        elif lines[dst_y][dst_x] in bs:
+            dst_ = 'b'
+        else:
+            dst_ = None
+
+        if not src_ and src_ == dst_ and src_ in 'wb':
+            msg += "\n" + "吃自己棋子"
+            error = True
+        if error:
+            msg += "\n执行的行为是{}".format(in_action) + "\n当前玩家为{}".format(origin_state.get_current_player())
+            write_line(file_name="error", msg=msg,
+                       title="问题")
 
         lines[dst_y][dst_x] = lines[src_y][src_x]
         lines[src_y][src_x] = '1'

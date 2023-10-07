@@ -31,7 +31,7 @@ class Arena:
         self.elo_red = 0
         self.elo_black = 0
 
-    def playGame(self):
+    def playGame(self, turns, iter):
         """
         Executes one episode of a game.
 
@@ -55,8 +55,7 @@ class Arena:
             another_player = players[1 - cur_player]
             it += 1
 
-            move = current_player.get_move_probs(game_state, predict_workers=[
-                prediction_worker(current_player)])
+            move = current_player.get_move_probs(game_state)
             show_current_player = game_state.get_current_player()
             game_state.do_move(move)
             is_end, winner, info = game_state.game_end()
@@ -71,10 +70,17 @@ class Arena:
             else:
                 peace_round += 1
 
+            temp = [x.strip() for x in game_state.display()]
+            msg = str("\n".join(temp)) + "\n执行的行为是{}".format(move) + "\n执行该行为的玩家为{}".format(
+                show_current_player) + "\n当前玩家为{}".format(game_state.get_current_player())
+            write_line(file_name="terminal_in_arena_process" + str(turns) + str(iter), msg=msg,
+                       title="过程：" + info)
             if it > 150 and peace_round > 60:
                 temp = [x.strip() for x in game_state.display()]
                 msg = str("\n".join(temp))
                 write_line(file_name="terminal_in_arena", msg=msg, title="终结局面(和棋)")
+                current_player.update_with_move(-1)
+                another_player.update_with_move(-1)
                 return None
 
             if is_end:
@@ -82,10 +88,14 @@ class Arena:
                 msg = str("\n".join(temp)) + "\n执行的行为是{}".format(move) + "\n执行该行为的玩家为{}".format(
                     show_current_player) + "\n当前玩家为{}".format(game_state.get_current_player())
                 write_line(file_name="terminal_in_arena", msg=msg, title="终结局面：" + info)
+                current_player.update_with_move(-1)
+                another_player.update_with_move(-1)
                 return winner
+        players[0].update_with_move(-1)
+        players[-1].update_with_move(-1)
         return winner
 
-    def playGames(self, num):
+    def playGames(self, num, i):
         """
         Plays num games in which player1 starts num/2 games and player2 starts
         num/2 games.
@@ -100,7 +110,7 @@ class Arena:
         red_win = 0
         black_win = 0
         for _ in tqdm(range(num), desc="Arena.playGames"):
-            game_result = self.playGame()
+            game_result = self.playGame(_, i)
             assert game_result in ['w', 'b', None]
             if game_result == 'w':
                 w = 1
