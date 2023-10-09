@@ -47,6 +47,7 @@ class Coach:
                            pi is the MCTS informed policy vector, v is +1 if
                            the player eventually won the game, else -1.
         """
+        print(f"进程 {os.getpid()} 开启")
         gs = GameState()
         train_examples = []
         episode_step = 0
@@ -79,21 +80,24 @@ class Coach:
             temp = [x.strip() for x in gs.display()]
             msg = str("\n".join(temp)) + "\n执行的行为是{}".format(move) + "\n执行该行为的玩家为{}".format(
                 current_player) + "\n当前玩家为{}".format(gs.get_current_player())
-            write_line(file_name="_execute_episode_procedure_" + str(numIters) + "_" + str(iter_number), msg=msg, title="在execute_episode方法中的过程：" + info)
+            write_line(file_name="_execute_episode_procedure_" + str(numIters) + "_" + str(iter_number), msg=msg,
+                       title="在execute_episode方法中的过程：" + info)
 
             if episode_step > 150 and peace_round > 60:
                 for t in range(len(train_examples)):
                     train_examples[t][2] = 0
                 temp = [x.strip() for x in gs.display()]
                 msg = str("\n".join(temp))
-                write_line(file_name="_execute_episode_terminal_", msg=msg, title="在execute_episode方法中的终结局面(和棋)：" + info)
+                write_line(file_name="_execute_episode_terminal_", msg=msg,
+                           title="在execute_episode方法中的终结局面(和棋)：" + info)
                 return train_examples
 
             if is_end:
                 temp = [x.strip() for x in gs.display()]
                 msg = str("\n".join(temp)) + "\n执行的行为是{}".format(move) + "\n执行该行为的玩家为{}".format(
                     current_player) + "\n当前玩家为{}".format(gs.get_current_player())
-                write_line(file_name="_execute_episode_terminal_", msg=msg, title="在execute_episode方法中的终结局面：" + info)
+                write_line(file_name="_execute_episode_terminal_", msg=msg,
+                           title="在execute_episode方法中的终结局面：" + info)
                 for t in range(len(train_examples)):
                     if winner == gs.get_current_player():
                         train_examples[t][2] = 1
@@ -195,3 +199,151 @@ class Coach:
 
             # examples based on the model were already collected (loaded)
             self.skipFirstSelfPlay = True
+
+
+from china_chess.algorithm.sl_net import NNetWrapper as nn
+from utils import *
+
+
+def execute_episode(numIters, iter_number):
+    """
+    This function executes one episode of self-play, starting with player 1.
+    As the game is played, each turn is added as a training example to
+    trainExamples. The game is played till the game ends. After the game
+    ends, the outcome of the game is used to assign values to each example
+    in trainExamples.
+
+    It uses a temp=1 if episodeStep < tempThreshold, and thereafter
+    uses temp=0.
+
+    Returns:
+        trainExamples: a list of examples of the form (canonicalBoard, currPlayer, pi,v)
+                       pi is the MCTS informed policy vector, v is +1 if
+                       the player eventually won the game, else -1.
+    """
+    nnet = nn()
+    mcts = MCTS(policy_loop_arg=True, net=nnet)
+    print(f"进程 {os.getpid()} 开启")
+    gs = GameState()
+    train_examples = []
+    episode_step = 0
+
+    peace_round = 0
+    remain_piece = countpiece(gs.state_str)
+    while True:
+        episode_step += 1
+        temp = int(episode_step < 10)
+
+        move = mcts.get_move_probs(gs, temp=temp)
+        pi = [0] * len(LABELS)
+        pi[LABELS_TO_INDEX[move]] = 1
+        bb = BaseChessBoard(gs.state_str)
+        state_str = bb.get_board_arr()
+        net_x = boardarr2netinput(state_str, gs.get_current_player())
+        train_examples.append([net_x, pi, None, gs.get_current_player()])
+        current_player = gs.get_current_player()
+        gs.do_move(move)
+        is_end, winner, info = gs.game_end()
+        mcts.update_with_move(move)
+
+        remain_piece_round = countpiece(gs.state_str)
+        if remain_piece_round < remain_piece:
+            remain_piece = remain_piece_round
+            peace_round = 0
+        else:
+            peace_round += 1
+
+        temp = [x.strip() for x in gs.display()]
+        msg = str("\n".join(temp)) + "\n执行的行为是{}".format(move) + "\n执行该行为的玩家为{}".format(
+            current_player) + "\n当前玩家为{}".format(gs.get_current_player())
+        write_line(file_name="_execute_episode_procedure_" + str(numIters) + "_" + str(iter_number), msg=msg,
+                   title="在execute_episode方法中的过程：" + info)
+
+        if episode_step > 150 and peace_round > 60:
+            for t in range(len(train_examples)):
+                train_examples[t][2] = 0
+            temp = [x.strip() for x in gs.display()]
+            msg = str("\n".join(temp))
+            write_line(file_name="_execute_episode_terminal_", msg=msg,
+                       title="在execute_episode方法中的终结局面(和棋)：" + info)
+            return train_examples
+
+        if is_end:
+            temp = [x.strip() for x in gs.display()]
+            msg = str("\n".join(temp)) + "\n执行的行为是{}".format(move) + "\n执行该行为的玩家为{}".format(
+                current_player) + "\n当前玩家为{}".format(gs.get_current_player())
+            write_line(file_name="_execute_episode_terminal_", msg=msg,
+                       title="在execute_episode方法中的终结局面：" + info)
+            for t in range(len(train_examples)):
+                if winner == gs.get_current_player():
+                    train_examples[t][2] = 1
+                else:
+                    train_examples[t][2] = -1
+            return train_examples
+
+
+from concurrent.futures import ProcessPoolExecutor
+import cloudpickle
+
+
+class CloudpickleWrapper(object):
+    """
+    Uses cloudpickle to serialize contents (otherwise multiprocessing tries to use pickle)
+    """
+
+    def __init__(self, x):
+        self.x = x
+
+    def __getstate__(self):
+        import cloudpickle
+        return cloudpickle.dumps(self.x)
+
+    def __setstate__(self, ob):
+        import pickle
+        self.x = pickle.loads(ob)
+
+
+if __name__ == '__main__':
+    args = dotdict({
+        'numIters': 1000,
+        'numEps': 10,  # Number of complete self-play games to simulate during a new iteration.
+        'updateThreshold': 0.6,
+        # During arena playoff, new neural net will be accepted if threshold or more of games are won.
+        'maxlenOfQueue': 200000,  # Number of game examples to train the neural networks.
+        'arenaCompare': 10,  # Number of games to play during arena play to determine if new net will be accepted.
+        'cpuct': 5,
+        'tempThreshold': 105,
+        'checkpoint': './temp/',
+        'load_model': True,
+        'load_folder_file': ('./temp/', 'best.pth.tar'),
+        'numItersForTrainExamplesHistory': 500,
+
+    })
+
+    max_process = 10
+    import time
+
+    start = time.time()
+    res = []
+    with ProcessPoolExecutor(max_workers=3) as executor:
+        future = []
+        for i in range(max_process):
+            f = executor.submit(execute_episode, -1, -1)
+            future.append(f)
+
+        for x in future:
+            re = [str(y) for y in x.result()]
+            res.append("\n".join(re))
+
+    print(f"消耗时间 = {time.time() - start}")
+
+    write_line("result", str("".join(res)), "多进程结果")
+
+    start = time.time()
+    nnet = nn()
+    c = Coach(nnet, args)
+    for i in range(max_process):
+        mcts = MCTS(policy_loop_arg=True, net=nnet)
+        c.execute_episode(-1, -1, mcts)
+
+    print(f"消耗时间 = {time.time() - start}")
