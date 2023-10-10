@@ -30,6 +30,7 @@ class Coach:
         self.trainExamplesHistory = []  # history of examples from args.numItersForTrainExamplesHistory latest iterations
         self.skipFirstSelfPlay = False  # can be overriden in loadTrainExamples()
         self.summary = MySummary("elo")
+        self.pre_rate = -float('inf')
 
     def execute_episode(self, numIters, iter_number, mcts):
         """
@@ -153,11 +154,13 @@ class Coach:
             log.info('PITTING AGAINST PREVIOUS VERSION')
             arena = Arena(pmcts, nmcts)
             red_elo_current, black_elo_current, draws, red_win, black_win = arena.playGames(self.args.arenaCompare, i)
+            win_rate = red_win / (red_win + black_win)
             self.summary.add_float(x=i, y=red_elo_current, title='Red Elo')
             self.summary.add_float(x=i, y=black_elo_current, title='Black Elo')
-            self.summary.add_float(x=i, y=red_win / self.args.arenaCompare, title='Red Win Rate')
+            self.summary.add_float(x=i, y=win_rate, title='Red Win Rate')
             log.info('DRAWS : %d' % (draws / self.args.arenaCompare))
-            if red_win > black_win:
+            if win_rate > self.pre_rate:
+                self.pre_rate = win_rate
                 log.info('ACCEPTING NEW MODEL')
                 self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
                 self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')

@@ -1,11 +1,16 @@
 import logging
+import random
 
 from tqdm import tqdm
+
+from china_chess.algorithm.icy_chess.game_board import GameBoard
 from china_chess.algorithm.icy_chess.game_state import GameState
 
 log = logging.getLogger(__name__)
 from china_chess.algorithm.china_chess_board import *
 from china_chess.algorithm.elo_helper import *
+
+RANDOM_PLAYER = "RANDOM_PLAYER"
 
 
 class Arena:
@@ -13,7 +18,7 @@ class Arena:
     An Arena class where any 2 agents can be pit against each other.
     """
 
-    def __init__(self, player1, player2, display=None):
+    def __init__(self, player1, display=None):
         """
         Input:
             player 1,2: two functions that takes board as input, return action
@@ -26,10 +31,10 @@ class Arena:
         human players/other baselines with each other.
         """
         self.player1 = player1
-        self.player2 = player2
         self.display = display
         self.elo_red = 0
         self.elo_black = 0
+        self.random_player = RANDOM_PLAYER
 
     def playGame(self, turns, iter):
         """
@@ -41,7 +46,7 @@ class Arena:
             or
                 draw result returned from the game that is neither 1, -1, nor 0.
         """
-        players = [self.player2, None, self.player1]
+        players = [self.random_player, None, self.player1]
         cur_player = 1
         it = 0
         winner = None
@@ -55,12 +60,19 @@ class Arena:
             another_player = players[1 - cur_player]
             it += 1
 
-            move = current_player.get_move_probs(game_state)
+            if current_player == RANDOM_PLAYER:
+                move = GameBoard.get_legal_moves(game_state.state_str, game_state.get_current_player())
+                move = random.choice(move)
+            else:
+                move = current_player.get_move_probs(game_state)
+
             show_current_player = game_state.get_current_player()
             game_state.do_move(move)
             is_end, winner, info = game_state.game_end()
-            current_player.update_with_move(move)
-            another_player.update_with_move(move)
+            if current_player != RANDOM_PLAYER:
+                current_player.update_with_move(move)
+            if another_player != RANDOM_PLAYER:
+                another_player.update_with_move(move)
             cur_player *= -1
 
             remain_piece_round = countpiece(game_state.state_str)
@@ -79,8 +91,10 @@ class Arena:
                 temp = [x.strip() for x in game_state.display()]
                 msg = str("\n".join(temp))
                 write_line(file_name="_playGame_terminal_", msg=msg, title="在playGame方法中的终结局面(和棋)")
-                current_player.update_with_move(-1)
-                another_player.update_with_move(-1)
+                if current_player != RANDOM_PLAYER:
+                    current_player.update_with_move(-1)
+                if another_player != RANDOM_PLAYER:
+                    another_player.update_with_move(-1)
                 return None
 
             if is_end:
@@ -88,10 +102,11 @@ class Arena:
                 msg = str("\n".join(temp)) + "\n执行的行为是{}".format(move) + "\n执行该行为的玩家为{}".format(
                     show_current_player) + "\n当前玩家为{}".format(game_state.get_current_player())
                 write_line(file_name="_playGame_terminal_", msg=msg, title="在playGame方法中的终结局面：" + info)
-                current_player.update_with_move(-1)
-                another_player.update_with_move(-1)
+                if current_player != RANDOM_PLAYER:
+                    current_player.update_with_move(-1)
+                if another_player != RANDOM_PLAYER:
+                    another_player.update_with_move(-1)
                 return winner
-        players[0].update_with_move(-1)
         players[-1].update_with_move(-1)
         return winner
 
@@ -105,7 +120,6 @@ class Arena:
             twoWon: games won by player2
             draws:  games won by nobody
         """
-        self.player1, self.player2 = self.player2, self.player1
         draw_num = 0
         red_win = 0
         black_win = 0

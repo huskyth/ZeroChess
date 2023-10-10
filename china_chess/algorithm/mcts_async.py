@@ -137,7 +137,7 @@ class TreeNode:
 class MCTS(object):
     """An implementation of Monte Carlo Tree Search."""
 
-    def __init__(self, c_puct=5, n_playout=10, search_threads=128, virtual_loss=3, policy_loop_arg=False, dnoise=False,
+    def __init__(self, c_puct=5, n_playout=32, search_threads=128, virtual_loss=3, policy_loop_arg=False, dnoise=False,
                  net=None, name="MCTS"):
         """
         policy_value_fn: a function that takes in a board state and outputs
@@ -168,6 +168,7 @@ class MCTS(object):
         self.name = name
 
         self.q = Queue(400)
+        self.net = net
 
     async def push_queue(self, features, loop):
         future = loop.create_future()
