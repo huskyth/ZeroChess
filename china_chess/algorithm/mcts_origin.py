@@ -123,7 +123,7 @@ class MCTS(object):
     """An implementation of Monte Carlo Tree Search."""
 
     def __init__(self, c_puct=5, n_playout=1200, virtual_loss=3,
-                 dnoise=False, name="MCTS"):
+                 dnoise=False, name="MCTS", remote=None):
         """
         policy_value_fn: a function that takes in a board state and outputs
             a list of (action, probability) tuples and also a score in [-1, 1]
@@ -146,6 +146,8 @@ class MCTS(object):
 
         self.name = name
 
+        self.remote = remote
+
     def _playout(self, state):
         """Run a single playout from the root to the leaf, getting a value at
         the leaf and propagating it back through its parents.
@@ -154,8 +156,6 @@ class MCTS(object):
         if True:
             node = self._root
             road = []
-            move = None
-            move_player = None
             while True:
                 start = time.time()
                 if node.is_leaf():
@@ -164,8 +164,6 @@ class MCTS(object):
                 action, node = node.select(self._c_puct)
                 road.append(node)
                 node.virtual_loss -= self.virtual_loss
-                move = action
-                move_player = state.current_player
                 state.do_move(action)
                 self.select_time += (time.time() - start)
 
@@ -256,7 +254,12 @@ class MCTS(object):
         state_str = bb.get_board_arr()
         net_x = boardarr2netinput(state_str, state.get_current_player())
 
-        policy_out, val_out = self.net.predict(net_x)
+        self.remote.send(('predict', net_x))
+        policy_out, val_out = self.remote.recv()
+
+
+
+
         legal_move = GameBoard.get_legal_moves(state.state_str, state.get_current_player())
         legal_move = set(legal_move)
         legal_move_b = set(flipped_uci_labels(legal_move))
