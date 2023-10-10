@@ -137,8 +137,8 @@ class TreeNode:
 class MCTS(object):
     """An implementation of Monte Carlo Tree Search."""
 
-    def __init__(self, c_puct=5, n_playout=10, search_threads=128, virtual_loss=3,
-                 policy_loop_arg=False, dnoise=False, net=None, name="MCTS"):
+    def __init__(self, c_puct=5, n_playout=10, search_threads=128, virtual_loss=3, policy_loop_arg=False, dnoise=False,
+                 net=None, name="MCTS"):
         """
         policy_value_fn: a function that takes in a board state and outputs
             a list of (action, probability) tuples and also a score in [-1, 1]
