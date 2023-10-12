@@ -1,5 +1,8 @@
 import numpy as np
 
+from china_chess.algorithm.china_chess_board import ChinaChessBoard
+from china_chess.constant import MAP_WIDTH, STATE_STR_TO_INTEGER, MAP_HEIGHT
+
 
 def create_position_labels():
     labels_array = []
@@ -26,6 +29,28 @@ class GameBoard(object):
         # self.players = ["w", "b"]
         self.current_player = "w"
         self.restrict_round = 0
+
+    def str_to_integer_map(self):
+        top_to_bottom = self.state.split('/')
+        result = [[0 for i in range(MAP_WIDTH)] for j in range(MAP_HEIGHT)]
+        cur_idx = 0
+
+        def get_row_column(idx):
+            return cur_idx // MAP_WIDTH, cur_idx - cur_idx // MAP_WIDTH * MAP_WIDTH
+
+        for line in top_to_bottom:
+            for cell in line:
+                if cell in '0123456789':
+                    n = int(cell)
+                    for i in range(n):
+                        row, column = get_row_column(cur_idx)
+                        result[row][column] = 0
+                        cur_idx += 1
+                else:
+                    row, column = get_row_column(cur_idx)
+                    result[row][column] = STATE_STR_TO_INTEGER[cell]
+                    cur_idx += 1
+        return result
 
     # 小写表示黑方，大写表示红方
     # [
@@ -177,6 +202,12 @@ class GameBoard(object):
                     return False
         else:
             return True
+
+    def display(self, is_print_screen=False):
+        b = ChinaChessBoard(None)
+        b.to_chess_map(self.str_to_integer_map())
+
+        return b.print_visible_string(is_print_screen=is_print_screen)
 
     @staticmethod
     def get_legal_moves(state, current_player):

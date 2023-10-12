@@ -13,7 +13,7 @@ from china_chess.algorithm.mcts_async import QueueItem
 
 
 class MCTS_tree(object):
-    def __init__(self, in_state, in_forward, search_threads):
+    def __init__(self, in_state, in_forward, search_threads=16):
         self.noise_eps = 0.25
         self.dirichlet_alpha = 0.3  # 0.03
         self.p_ = (1 - self.noise_eps) * 1 + self.noise_eps * np.random.dirichlet([self.dirichlet_alpha])
