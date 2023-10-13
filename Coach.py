@@ -141,6 +141,7 @@ class Coach:
         winner_batch = np.expand_dims(winner_batch, 1)
 
         start_time = time.time()
+        accurate, loss = 0, 0
         old_probs, old_v = self.mcts.forward(state_batch)
         for i in range(self.epochs):
             # print("tf.executing_eagerly() : ", tf.executing_eagerly())
@@ -148,7 +149,9 @@ class Coach:
             if len(state_batch.shape) == 3:
                 sp = state_batch.shape
                 state_batch = np.reshape(state_batch, [1, sp[0], sp[1], sp[2]])
-            self.policy_value_network.train(state_batch, batch_iter, i, lr=self.lr_multiplier * self.learning_rate)
+            accurate, loss = self.policy_value_network.train(state_batch, batch_iter, i,
+                                                             lr=self.lr_multiplier * self.learning_rate,
+                                                             epoch=i)
 
             new_probs, new_v = self.mcts.forward(state_batch)
             kl_tmp = old_probs * (np.log((old_probs + 1e-10) / (new_probs + 1e-10)))
@@ -178,8 +181,9 @@ class Coach:
         explained_var_new = 1 - np.var(np.array(winner_batch) - new_v) / np.var(
             np.array(winner_batch))  # .flatten()
         print(
-            "kl:{:.5f},lr_multiplier:{:.3f},explained_var_old:{:.3f},explained_var_new:{:.3f}".format(
-                kl, self.lr_multiplier, explained_var_old, explained_var_new))
+            "kl:{:.5f},lr_multiplier:{:.3f},explained_var_old:{:.3f},explained_var_new:{:.3f},accurate:{},loss{}".format(
+                kl, self.lr_multiplier, explained_var_old, explained_var_new, accurate / self.epochs,
+                                                                              loss / self.epochs))
         # return loss, accuracy
 
     def learn(self):
