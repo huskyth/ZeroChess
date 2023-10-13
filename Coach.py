@@ -22,7 +22,9 @@ log = logging.getLogger(__name__)
 class Coach:
 
     def __init__(self, playout=4, in_search_threads=16, in_batch_size=4, exploration=True):
-        self.policy_value_network = PolicyValueNetwork()
+        self.summary = MySummary("all_matrix")
+
+        self.policy_value_network = PolicyValueNetwork(self.summary)
         self.buffer_size = 10000
         self.temperature = 1  # 1e-8    1e-3
         self.playout_counts = playout  # 400    #800    #1600    200
@@ -31,7 +33,6 @@ class Coach:
         self.lr_multiplier = 1.0  # adaptively adjust the learning rate based on KL
         self.learning_rate = 0.001  # 5e-3    #    0.001
 
-        self.summary = MySummary("elo")
         self.batch_size = in_batch_size  # 128    #512
         self.exploration = exploration
 
@@ -152,7 +153,8 @@ class Coach:
             if len(state_batch.shape) == 3:
                 sp = state_batch.shape
                 state_batch = np.reshape(state_batch, [1, sp[0], sp[1], sp[2]])
-            accurate, loss = self.policy_value_network.train(state_batch, batch_iter, epoch=i,
+            accurate, loss = self.policy_value_network.train(state_batch, mcts_probs_batch, winner_batch,
+                                                             step=batch_iter * self.epochs + i,
                                                              lr=self.lr_multiplier * self.learning_rate,
                                                              )
 
@@ -183,15 +185,19 @@ class Coach:
             np.array(winner_batch))  # .flatten()
         explained_var_new = 1 - np.var(np.array(winner_batch) - new_v) / np.var(
             np.array(winner_batch))  # .flatten()
+        self.summary.add_float(batch_iter, kl, "KL")
+        self.summary.add_float(batch_iter, self.lr_multiplier, "LR Multiplier")
+        self.summary.add_float(batch_iter, explained_var_old, "Explained Var Old")
+        self.summary.add_float(batch_iter, explained_var_new, "Explained Var New")
         print(
-            "kl:{:.5f},lr_multiplier:{:.3f},explained_var_old:{:.3f},explained_var_new:{:.3f},accurate:{},loss{}".format(
-                kl, self.lr_multiplier, explained_var_old, explained_var_new, accurate / self.epochs,
-                                                                              loss / self.epochs))
+            "kl:{:.5f},lr_multiplier:{:.3f},explained_var_old:{:.3f},explained_var_new:{:.3f}".format(
+                kl, self.lr_multiplier, explained_var_old, explained_var_new))
         # return loss, accuracy
 
     def learn(self):
         # self.game_loop
         batch_iter = 0
+        update_iter = 0
         try:
             while True:
                 batch_iter += 1
@@ -207,7 +213,8 @@ class Coach:
                     extend_data.append((states_data, mcts_prob, winner))
                 self.data_buffer.extend(extend_data)
                 if len(self.data_buffer) > self.batch_size:
-                    self.policy_update(batch_iter)
+                    self.policy_update(update_iter)
+                    update_iter += 1
                 # if (batch_iter) % self.game_batch == 0:
                 #     print("current self-play batch: {}".format(batch_iter))
                 #     win_ratio = self.policy_evaluate()

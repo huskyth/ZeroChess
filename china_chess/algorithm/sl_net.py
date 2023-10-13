@@ -27,31 +27,24 @@ args = dotdict({
 
 
 class NNetWrapper(NeuralNet):
-    def __init__(self):
+    def __init__(self, summary_writer):
         self.nnet = CChessNNet(args)
         self.board_x, self.board_y = 10, 9
         self.action_size = len(LABELS)
+        self.summary = summary_writer
         if args.cuda:
             print("使用了CUDA")
             self.nnet.cuda()
 
-    def train(self, examples, batch_iter, epoch, lr):
-        shuffle(examples)
+    def train(self, state_batch, mcts_probs_batch, winner_batch, step, lr):
         optimizer = optim.Adam(self.nnet.parameters(), lr=lr, weight_decay=0.01)
-        loss_summary = MySummary("Pi Loss {}_{}".format(batch_iter, epoch))
 
-        print(f'ITER ::: {batch_iter + 1}, EPOCH ::: {epoch + 1}')
+        print(f'UPDATE ITER ::: {step}')
         self.nnet.train()
-        pi_losses = AverageMeter()
-        v_losses = AverageMeter()
-        ret_loss = 0
-        ret_accuracy = 0
 
-        sample_ids = np.random.randint(len(examples), size=args.batch_size)
-        boards, pis, vs, players = list(zip(*[examples[i] for i in sample_ids]))
-        boards = torch.FloatTensor(np.array(boards).astype(np.float64))
-        target_pis = torch.FloatTensor(np.array(pis))
-        target_vs = torch.FloatTensor(np.array(vs).astype(np.float64))
+        boards = torch.FloatTensor(np.array(state_batch).astype(np.float64))
+        target_pis = torch.FloatTensor(np.array(mcts_probs_batch))
+        target_vs = torch.FloatTensor(np.array(winner_batch).astype(np.float64))
 
         # predict
         if args.cuda:
@@ -62,15 +55,13 @@ class NNetWrapper(NeuralNet):
         l_pi = self.loss_pi(target_pis, out_pi)
         l_v = self.loss_v(target_vs, out_v)
         total_loss = l_pi + l_v
-        correct_prediction = torch.equal(torch.argmax(out_pi, 1), torch.argmax(examples, 1))
-        correct_prediction = torch.cast(correct_prediction, torch.float32)
-        ret_accuracy += torch.reduce_mean(correct_prediction, name='accuracy')
-        ret_loss += total_loss
+        ret_accuracy = torch.mean((torch.argmax(out_pi, 1) == torch.argmax(target_pis, 1)).float())
+        ret_loss = total_loss
         # record loss
-        pi_losses.update(l_pi.item(), boards.size(0))
-        v_losses.update(l_v.item(), boards.size(0))
-        loss_summary.add_float(epoch, pi_losses.avg, "Training Policy Loss")
-        loss_summary.add_float(epoch, v_losses.avg, "Training Value Loss")
+        self.summary.add_float(step, l_pi, "Training Policy Loss")
+        self.summary.add_float(step, l_v, "Training Value Loss")
+        self.summary.add_float(step, ret_accuracy, "Training Accuracy")
+        self.summary.add_float(step, ret_loss, "Training Accuracy")
         # compute gradient and do SGD step
         optimizer.zero_grad()
         total_loss.backward()
