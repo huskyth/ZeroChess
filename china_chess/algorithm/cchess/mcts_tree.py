@@ -45,7 +45,7 @@ class MCTS_tree(object):
             if move == a:
                 ret = n.Q
                 find = True
-        if (find == False):
+        if not find:
             print("{} not exist in the child".format(move))
         return ret
 
@@ -185,10 +185,10 @@ class MCTS_tree(object):
             # evolve game board status
             # child_position = self.env_action(position, action_t)
 
-            if (node.state.find('K') == -1 or node.state.find('k') == -1):
-                if (node.state.find('K') == -1):
+            if node.state.find('K') == -1 or node.state.find('k') == -1:
+                if node.state.find('K') == -1:
                     value = 1.0 if current_player == "b" else -1.0
-                if (node.state.find('k') == -1):
+                if node.state.find('k') == -1:
                     value = -1.0 if current_player == "b" else 1.0
                 value = value * -1
             elif restrict_round >= 60:
@@ -274,7 +274,7 @@ class MCTS_tree(object):
     def do_simulation(self, state, current_player, restrict_round):
         node = self.root
         last_state = state
-        while (node.is_leaf() == False):
+        while not node.is_leaf():
             # print("do_simulation while current_player : ", current_player)
             action, node = node.select(self.c_puct)
             current_player = "w" if current_player == "b" else "b"
@@ -292,10 +292,10 @@ class MCTS_tree(object):
 
         # print("action_probs shape : ", action_probs.shape)    #(1, 2086)
 
-        if (node.state.find('K') == -1 or node.state.find('k') == -1):
-            if (node.state.find('K') == -1):
+        if node.state.find('K') == -1 or node.state.find('k') == -1:
+            if node.state.find('K') == -1:
                 value = 1.0 if current_player == "b" else -1.0
-            if (node.state.find('k') == -1):
+            if node.state.find('k') == -1:
                 value = -1.0 if current_player == "b" else 1.0
         elif restrict_round >= 60:
             value = 0.0

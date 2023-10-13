@@ -66,6 +66,7 @@ class Coach:
         return act, move_probs, win_rate
 
     def execute_episode(self):
+        # self_play function
         self.game_board.reload()
         # p1, p2 = self.game_board.players
         states, mcts_probs, current_players = [], [], []
@@ -73,10 +74,10 @@ class Coach:
         game_over = False
         winnner = ""
         start_time = time.time()
-        # self.game_board.print_borad(self.game_board.state)
+        # self.game_board.print_board(self.game_board.state)
         while not game_over:
             action, probs, win_rate = self.get_action(self.game_board.state, self.temperature)
-            state, palyer = self.mcts.try_flip(self.game_board.state, self.game_board.current_player,
+            state, player = self.mcts.try_flip(self.game_board.state, self.game_board.current_player,
                                                self.mcts.is_black_turn(self.game_board.current_player))
             states.append(state)
             prob = np.zeros(labels_len)
@@ -103,7 +104,7 @@ class Coach:
             else:
                 self.game_board.restrict_round = 0
 
-            # self.game_board.print_borad(self.game_board.state, action)
+            # self.game_board.print_board(self.game_board.state, action)
 
             if self.game_board.state.find('K') == -1 or self.game_board.state.find('k') == -1:
                 z = np.zeros(len(current_players))

@@ -111,7 +111,7 @@ class leaf_node(object):
 
     def backup(self, value):
         node = self
-        while node != None:
+        while node is not None:
             node.N += 1
             node.W += value
             node.v = value
