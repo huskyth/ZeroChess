@@ -63,6 +63,12 @@ def flip_policy(prob):
     return np.asarray([prob[ind] for ind in unflipped_index])
 
 
+def softmax(x):
+    probs = np.exp(x - np.max(x))
+    probs /= np.sum(probs)
+    return probs
+
+
 c_PUCT = 5
 virtual_loss = 3
 pieces_order = 'KARBNPCkarbnpc'  # 9 x 10 x 14
