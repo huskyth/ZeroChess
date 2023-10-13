@@ -130,7 +130,7 @@ class Coach:
         print("Using time {} s".format(time.time() - start_time))
         return zip(states, mcts_probs, z), len(z)
 
-    def policy_update(self):
+    def policy_update(self, batch_iter):
         """update the policy-value net"""
         mini_batch = random.sample(self.data_buffer, self.batch_size)
         # print("training data_buffer len : ", len(self.data_buffer))
@@ -148,21 +148,7 @@ class Coach:
             if len(state_batch.shape) == 3:
                 sp = state_batch.shape
                 state_batch = np.reshape(state_batch, [1, sp[0], sp[1], sp[2]])
-            if self.processor == 'cpu':
-                accuracy, loss, self.global_step = self.policy_value_netowrk.train_step(state_batch, mcts_probs_batch,
-                                                                                        winner_batch,
-                                                                                        self.learning_rate * self.lr_multiplier)  #
-            else:
-                # import pickle
-                # pickle.dump((state_batch, mcts_probs_batch, winner_batch, self.learning_rate * self.lr_multiplier), open('preprocess.p', 'wb'))
-                with self.policy_value_netowrk.strategy.scope():
-                    train_dataset = tf.data.Dataset.from_tensor_slices(
-                        (state_batch, mcts_probs_batch, winner_batch)).batch(
-                        len(winner_batch))  # , self.learning_rate * self.lr_multiplier
-                    # .shuffle(BUFFER_SIZE).batch(BATCH_SIZE)
-                    train_iterator = self.policy_value_netowrk.strategy.make_dataset_iterator(train_dataset)
-                    train_iterator.initialize()
-                    accuracy, loss, self.global_step = self.policy_value_netowrk.distributed_train(train_iterator)
+            self.policy_value_network.train(state_batch, batch_iter, i, lr=self.lr_multiplier * self.learning_rate)
 
             new_probs, new_v = self.mcts.forward(state_batch)
             kl_tmp = old_probs * (np.log((old_probs + 1e-10) / (new_probs + 1e-10)))
@@ -192,8 +178,8 @@ class Coach:
         explained_var_new = 1 - np.var(np.array(winner_batch) - new_v) / np.var(
             np.array(winner_batch))  # .flatten()
         print(
-            "kl:{:.5f},lr_multiplier:{:.3f},loss:{},accuracy:{},explained_var_old:{:.3f},explained_var_new:{:.3f}".format(
-                kl, self.lr_multiplier, loss, accuracy, explained_var_old, explained_var_new))
+            "kl:{:.5f},lr_multiplier:{:.3f},explained_var_old:{:.3f},explained_var_new:{:.3f}".format(
+                kl, self.lr_multiplier, explained_var_old, explained_var_new))
         # return loss, accuracy
 
     def learn(self):
@@ -214,7 +200,7 @@ class Coach:
                     extend_data.append((states_data, mcts_prob, winner))
                 self.data_buffer.extend(extend_data)
                 if len(self.data_buffer) > self.batch_size:
-                    self.policy_update()
+                    self.policy_update(batch_iter)
                 # if (batch_iter) % self.game_batch == 0:
                 #     print("current self-play batch: {}".format(batch_iter))
                 #     win_ratio = self.policy_evaluate()

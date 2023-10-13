@@ -20,7 +20,7 @@ args = dotdict({
     'lr': 0.001,
     'dropout': 0.3,
     'epochs': 20,
-    'batch_size': 64,
+    'batch_size': 1,
     'cuda': torch.cuda.is_available(),
     'num_channels': 128,
 })
@@ -35,7 +35,7 @@ class NNetWrapper(NeuralNet):
             print("使用了CUDA")
             self.nnet.cuda()
 
-    def train(self, examples, iter_num):
+    def train(self, examples, batch_iter, iter_num, lr):
         n = int(len(examples) * 0.8)
         shuffle(examples)
 
@@ -45,11 +45,11 @@ class NNetWrapper(NeuralNet):
         """
         examples: list of examples, each example is of form (board, pi, v)
         """
-        optimizer = optim.Adam(self.nnet.parameters(), lr=0.0000001, weight_decay=0.01)
+        optimizer = optim.Adam(self.nnet.parameters(), lr=lr, weight_decay=0.01)
         step = 0
         eval_step = 0
         pre_loss = float('inf')
-        loss_summary = MySummary("Pi Loss {}".format(iter_num))
+        loss_summary = MySummary("Pi Loss {}_{}".format(batch_iter, iter_num))
         for epoch in range(args.epochs):
 
             print('EPOCH ::: ' + str(epoch + 1))
