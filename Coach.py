@@ -3,157 +3,222 @@ import os
 import sys
 from collections import deque
 from pickle import Pickler, Unpickler
-from random import shuffle
+import random
 
-from tqdm import tqdm
-
-from Arena import Arena
+from china_chess.algorithm.cchess.const_function import label2i, is_kill_move, labels_len
+from china_chess.algorithm.cchess.mcts_tree import MCTS_tree
 
 from china_chess.algorithm.mcts_async import *
 from china_chess.algorithm.tensor_board_tool import MySummary
 from china_chess.constant import LABELS, LABELS_TO_INDEX, countpiece
-import gc
+from china_chess.algorithm.sl_net import NNetWrapper as PolicyValueNetwork
 
 log = logging.getLogger(__name__)
 
 
 class Coach:
-    """
-    This class executes the self-play + learning. It uses the functions defined
-    in Game and NeuralNet. args are specified in bakeup_main.py.
-    """
 
-    def __init__(self, nnet, args):
-        self.nnet = nnet
-        self.pnet = self.nnet.__class__()  # the competitor network
-        self.args = args
-        self.trainExamplesHistory = []  # history of examples from args.numItersForTrainExamplesHistory latest iterations
-        self.skipFirstSelfPlay = False  # can be overriden in loadTrainExamples()
+    def __init__(self, playout=400, in_search_threads=16, in_batch_size=512, exploration=True):
+        self.policy_value_network = PolicyValueNetwork()
+        self.buffer_size = 10000
+        self.temperature = 1  # 1e-8    1e-3
+        self.playout_counts = playout  # 400    #800    #1600    200
+        self.epochs = 5
+        self.kl_targ = 0.025
+        self.lr_multiplier = 1.0  # adaptively adjust the learning rate based on KL
+        self.learning_rate = 0.001  # 5e-3    #    0.001
+
         self.summary = MySummary("elo")
-        self.pre_rate = -float('inf')
+        self.batch_size = in_batch_size  # 128    #512
+        self.exploration = exploration
 
-    def execute_episode(self, numIters, iter_number, mcts):
-        """
-        This function executes one episode of self-play, starting with player 1.
-        As the game is played, each turn is added as a training example to
-        trainExamples. The game is played till the game ends. After the game
-        ends, the outcome of the game is used to assign values to each example
-        in trainExamples.
+        self.data_buffer = deque(maxlen=self.buffer_size)
+        self.game_board = GameBoard()
+        self.search_threads = in_search_threads
 
-        It uses a temp=1 if episodeStep < tempThreshold, and thereafter
-        uses temp=0.
+        self.mcts = MCTS_tree(self.game_board.state, self.policy_value_network.predict, self.search_threads)
 
-        Returns:
-            trainExamples: a list of examples of the form (canonicalBoard, currPlayer, pi,v)
-                           pi is the MCTS informed policy vector, v is +1 if
-                           the player eventually won the game, else -1.
-        """
-        gs = GameState()
-        train_examples = []
-        episode_step = 0
+    def get_action(self, state, temperature=1e-3):
+        # for i in range(self.playout_counts):
+        #     state_sim = copy.deepcopy(state)
+        #     self.mcts.do_simulation(state_sim, self.game_board.current_player, self.game_board.restrict_round)
 
-        peace_round = 0
-        remain_piece = countpiece(gs.state_str)
-        while True:
-            episode_step += 1
-            temp = int(episode_step < self.args.tempThreshold)
+        self.mcts.main(state, self.game_board.current_player, self.game_board.restrict_round, self.playout_counts)
 
-            move = mcts.get_move_probs(gs, temp=temp)
-            pi = [0] * len(LABELS)
-            pi[LABELS_TO_INDEX[move]] = 1
-            bb = BaseChessBoard(gs.state_str)
-            state_str = bb.get_board_arr()
-            net_x = boardarr2netinput(state_str, gs.get_current_player())
-            train_examples.append([net_x, pi, None, gs.get_current_player()])
-            current_player = gs.get_current_player()
-            gs.do_move(move)
-            is_end, winner, info = gs.game_end()
-            mcts.update_with_move(move)
+        actions_visits = [(act, nod.N) for act, nod in self.mcts.root.child.items()]
+        actions, visits = zip(*actions_visits)
+        probs = softmax(1.0 / temperature * np.log(visits))  # + 1e-10
+        move_probs = [[actions, probs]]
 
-            remain_piece_round = countpiece(gs.state_str)
-            if remain_piece_round < remain_piece:
-                remain_piece = remain_piece_round
-                peace_round = 0
+        if self.exploration:
+            act = np.random.choice(actions, p=0.75 * probs + 0.25 * np.random.dirichlet(0.3 * np.ones(len(probs))))
+        else:
+            act = np.random.choice(actions, p=probs)
+
+        win_rate = self.mcts.Q(act)  # / 2.0 + 0.5
+        self.mcts.update_tree(act)
+
+        # if position.n < 30:    # self.top_steps
+        #     move = select_weighted_random(position, on_board_move_prob)
+        # else:
+        #     move = select_most_likely(position, on_board_move_prob)
+
+        return act, move_probs, win_rate
+
+    def execute_episode(self):
+        self.game_board.reload()
+        # p1, p2 = self.game_board.players
+        states, mcts_probs, current_players = [], [], []
+        z = None
+        game_over = False
+        winnner = ""
+        start_time = time.time()
+        # self.game_board.print_borad(self.game_board.state)
+        while not game_over:
+            action, probs, win_rate = self.get_action(self.game_board.state, self.temperature)
+            state, palyer = self.mcts.try_flip(self.game_board.state, self.game_board.current_player,
+                                               self.mcts.is_black_turn(self.game_board.current_player))
+            states.append(state)
+            prob = np.zeros(labels_len)
+            if self.mcts.is_black_turn(self.game_board.current_player):
+                for idx in range(len(probs[0][0])):
+                    # probs[0][0][idx] = "".join((str(9 - int(a)) if a.isdigit() else a) for a in probs[0][0][idx])
+                    act = "".join((str(9 - int(a)) if a.isdigit() else a) for a in probs[0][0][idx])
+                    # for idx in range(len(mcts_prob[0][0])):
+                    prob[label2i[act]] = probs[0][1][idx]
             else:
-                peace_round += 1
+                for idx in range(len(probs[0][0])):
+                    prob[label2i[probs[0][0][idx]]] = probs[0][1][idx]
+            mcts_probs.append(prob)
+            # mcts_probs.append(probs)
+            current_players.append(self.game_board.current_player)
 
-            if episode_step > 150 and peace_round > 60:
-                for t in range(len(train_examples)):
-                    train_examples[t][2] = 0
-                return train_examples
+            last_state = self.game_board.state
+            # print(self.game_board.current_player, " now take a action : ", action, "[Step {}]".format(self.game_board.round))
+            self.game_board.state = GameBoard.sim_do_action(action, self.game_board.state)
+            self.game_board.round += 1
+            self.game_board.current_player = "w" if self.game_board.current_player == "b" else "b"
+            if is_kill_move(last_state, self.game_board.state) == 0:
+                self.game_board.restrict_round += 1
+            else:
+                self.game_board.restrict_round = 0
 
-            if is_end:
-                for t in range(len(train_examples)):
-                    if winner == gs.get_current_player():
-                        train_examples[t][2] = 1
-                    else:
-                        train_examples[t][2] = -1
-                return train_examples
+            # self.game_board.print_borad(self.game_board.state, action)
+
+            if self.game_board.state.find('K') == -1 or self.game_board.state.find('k') == -1:
+                z = np.zeros(len(current_players))
+                if self.game_board.state.find('K') == -1:
+                    winnner = "b"
+                if self.game_board.state.find('k') == -1:
+                    winnner = "w"
+                z[np.array(current_players) == winnner] = 1.0
+                z[np.array(current_players) != winnner] = -1.0
+                game_over = True
+                print("Game end. Winner is player : ", winnner, " In {} steps".format(self.game_board.round - 1))
+            elif self.game_board.restrict_round >= 60:
+                z = np.zeros(len(current_players))
+                game_over = True
+                print("Game end. Tie in {} steps".format(self.game_board.round - 1))
+            # elif(self.mcts.root.v < self.resign_threshold):
+            #     pass
+            # elif(self.mcts.root.Q < self.resign_threshold):
+            #    pass
+            if game_over:
+                # self.mcts.root = leaf_node(None, self.mcts.p_, "RNBAKABNR/9/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c5c1/9/rnbakabnr")#"rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR"
+                self.mcts.reload()
+        print("Using time {} s".format(time.time() - start_time))
+        return zip(states, mcts_probs, z), len(z)
+
+    def policy_update(self):
+        """update the policy-value net"""
+        mini_batch = random.sample(self.data_buffer, self.batch_size)
+        # print("training data_buffer len : ", len(self.data_buffer))
+        state_batch = [data[0] for data in mini_batch]
+        mcts_probs_batch = [data[1] for data in mini_batch]
+        winner_batch = [data[2] for data in mini_batch]
+
+        winner_batch = np.expand_dims(winner_batch, 1)
+
+        start_time = time.time()
+        old_probs, old_v = self.mcts.forward(state_batch)
+        for i in range(self.epochs):
+            # print("tf.executing_eagerly() : ", tf.executing_eagerly())
+            state_batch = np.array(state_batch)
+            if len(state_batch.shape) == 3:
+                sp = state_batch.shape
+                state_batch = np.reshape(state_batch, [1, sp[0], sp[1], sp[2]])
+            if self.processor == 'cpu':
+                accuracy, loss, self.global_step = self.policy_value_netowrk.train_step(state_batch, mcts_probs_batch,
+                                                                                        winner_batch,
+                                                                                        self.learning_rate * self.lr_multiplier)  #
+            else:
+                # import pickle
+                # pickle.dump((state_batch, mcts_probs_batch, winner_batch, self.learning_rate * self.lr_multiplier), open('preprocess.p', 'wb'))
+                with self.policy_value_netowrk.strategy.scope():
+                    train_dataset = tf.data.Dataset.from_tensor_slices(
+                        (state_batch, mcts_probs_batch, winner_batch)).batch(
+                        len(winner_batch))  # , self.learning_rate * self.lr_multiplier
+                    # .shuffle(BUFFER_SIZE).batch(BATCH_SIZE)
+                    train_iterator = self.policy_value_netowrk.strategy.make_dataset_iterator(train_dataset)
+                    train_iterator.initialize()
+                    accuracy, loss, self.global_step = self.policy_value_netowrk.distributed_train(train_iterator)
+
+            new_probs, new_v = self.mcts.forward(state_batch)
+            kl_tmp = old_probs * (np.log((old_probs + 1e-10) / (new_probs + 1e-10)))
+
+            kl_lst = []
+            for line in kl_tmp:
+                # print("line.shape", line.shape)
+                all_value = [x for x in line if str(x) != 'nan' and str(x) != 'inf']  # 除去inf值
+                kl_lst.append(np.sum(all_value))
+            kl = np.mean(kl_lst)
+            # kl = scipy.stats.entropy(old_probs, new_probs)
+            # kl = np.mean(np.sum(old_probs * (np.log(old_probs + 1e-10) - np.log(new_probs + 1e-10)), axis=1))
+
+            if kl > self.kl_targ * 4:  # early stopping if D_KL diverges badly
+                break
+        self.policy_value_network.save_checkpoint()
+        print("train using time {} s".format(time.time() - start_time))
+
+        # adaptively adjust the learning rate
+        if kl > self.kl_targ * 2 and self.lr_multiplier > 0.1:
+            self.lr_multiplier /= 1.5
+        elif kl < self.kl_targ / 2 and self.lr_multiplier < 10:
+            self.lr_multiplier *= 1.5
+
+        explained_var_old = 1 - np.var(np.array(winner_batch) - old_v) / np.var(
+            np.array(winner_batch))  # .flatten()
+        explained_var_new = 1 - np.var(np.array(winner_batch) - new_v) / np.var(
+            np.array(winner_batch))  # .flatten()
+        print(
+            "kl:{:.5f},lr_multiplier:{:.3f},loss:{},accuracy:{},explained_var_old:{:.3f},explained_var_new:{:.3f}".format(
+                kl, self.lr_multiplier, loss, accuracy, explained_var_old, explained_var_new))
+        # return loss, accuracy
 
     def learn(self):
-        """
-        Performs numIters iterations with numEps episodes of self-play in each
-        iteration. After every iteration, it retrains neural network with
-        examples in trainExamples (which has a maximum length of maxlenofQueue).
-        It then pits the new neural network against the old one and accepts it
-        only if it wins >= updateThreshold fraction of games.
-        """
-        mcts = MCTS(policy_loop_arg=True, net=self.nnet)
-        for i in range(1, self.args.numIters + 1):
-            log.info(f'Starting Iter #{i} ...')
-            iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
-            for j in tqdm(range(self.args.numEps), desc="Self Play"):
-                mcts.update_with_move(-1)
-                iterationTrainExamples += self.execute_episode(i, j, mcts)
-
-            self.trainExamplesHistory.append(iterationTrainExamples)
-
-            # save the iteration examples to the history
-            if len(self.trainExamplesHistory) > self.args.numItersForTrainExamplesHistory:
-                log.warning(
-                    f"Removing the oldest entry in trainExamples. len(trainExamplesHistory) = {len(self.trainExamplesHistory)}")
-                self.trainExamplesHistory.pop(0)
-            # backup history to a file
-            # NB! the examples were collected using the model from the previous iteration, so (i-1)  
-            self.saveTrainExamples(i - 1)
-
-            # shuffle examples before training
-            trainExamples = []
-            for e in self.trainExamplesHistory:
-                trainExamples.extend(e)
-            shuffle(trainExamples)
-
-            # training new network, keeping a copy of the old one
-            self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
-            self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
-            pmcts = MCTS(policy_loop_arg=True, net=self.pnet,
-                         name="p-mcts")
-            self.nnet.train(trainExamples, i)
-            nmcts = MCTS(policy_loop_arg=True, net=self.nnet,
-                         name="n-mcts")
-
-            log.info('PITTING AGAINST PREVIOUS VERSION')
-            arena = Arena(pmcts, nmcts)
-            red_elo_current, black_elo_current, draws, red_win, black_win = arena.playGames(self.args.arenaCompare, i)
-            win_rate = red_win / (red_win + black_win)
-            self.summary.add_float(x=i, y=red_elo_current, title='Red Elo')
-            self.summary.add_float(x=i, y=black_elo_current, title='Black Elo')
-            self.summary.add_float(x=i, y=win_rate, title='Red Win Rate')
-            log.info('DRAWS : %d' % (draws / self.args.arenaCompare))
-            if win_rate > self.pre_rate:
-                self.pre_rate = win_rate
-                log.info('ACCEPTING NEW MODEL')
-                self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
-                self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
-            else:
-                log.info('REJECTING NEW MODEL')
-                self.nnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
-
-            del trainExamples
-            del pmcts
-            del nmcts
-            del arena
-            gc.collect()
+        # self.game_loop
+        batch_iter = 0
+        try:
+            while True:
+                batch_iter += 1
+                play_data, episode_len = self.execute_episode()
+                print("batch i:{}, episode_len:{}".format(batch_iter, episode_len))
+                extend_data = []
+                # states_data = []
+                for state, mcts_prob, winner in play_data:
+                    states_data = self.mcts.state_to_positions(state)
+                    # prob = np.zeros(labels_len)
+                    # for idx in range(len(mcts_prob[0][0])):
+                    #     prob[label2i[mcts_prob[0][0][idx]]] = mcts_prob[0][1][idx]
+                    extend_data.append((states_data, mcts_prob, winner))
+                self.data_buffer.extend(extend_data)
+                if len(self.data_buffer) > self.batch_size:
+                    self.policy_update()
+                # if (batch_iter) % self.game_batch == 0:
+                #     print("current self-play batch: {}".format(batch_iter))
+                #     win_ratio = self.policy_evaluate()
+        except KeyboardInterrupt:
+            self.policy_value_network.save_checkpoint()
 
     def getCheckpointFile(self, iteration):
         return 'checkpoint_' + str(iteration) + '.pth.tar'
@@ -182,7 +247,6 @@ class Coach:
             log.info('Loading done!')
 
             # examples based on the model were already collected (loaded)
-            self.skipFirstSelfPlay = True
 
 
 from china_chess.algorithm.sl_net import NNetWrapper as nn
@@ -285,49 +349,3 @@ class CloudpickleWrapper(object):
     def __setstate__(self, ob):
         import pickle
         self.x = pickle.loads(ob)
-
-
-if __name__ == '__main__':
-    args = dotdict({
-        'numIters': 1000,
-        'numEps': 10,  # Number of complete self-play games to simulate during a new iteration.
-        'updateThreshold': 0.6,
-        # During arena playoff, new neural net will be accepted if threshold or more of games are won.
-        'maxlenOfQueue': 200000,  # Number of game examples to train the neural networks.
-        'arenaCompare': 10,  # Number of games to play during arena play to determine if new net will be accepted.
-        'cpuct': 5,
-        'tempThreshold': 105,
-        'checkpoint': './temp/',
-        'load_model': True,
-        'load_folder_file': ('./temp/', 'best.pth.tar'),
-        'numItersForTrainExamplesHistory': 500,
-
-    })
-
-    max_process = 10
-    import time
-
-    start = time.time()
-    res = []
-    with ProcessPoolExecutor(max_workers=3) as executor:
-        future = []
-        for i in range(max_process):
-            f = executor.submit(execute_episode, -1, -1)
-            future.append(f)
-
-        for x in future:
-            re = [str(y) for y in x.result()]
-            res.append("\n".join(re))
-
-    print(f"消耗时间 = {time.time() - start}")
-
-    write_line("result", str("".join(res)), "多进程结果")
-
-    start = time.time()
-    nnet = nn()
-    c = Coach(nnet, args)
-    for i in range(max_process):
-        mcts = MCTS(policy_loop_arg=True, net=nnet)
-        c.execute_episode(-1, -1, mcts)
-
-    print(f"消耗时间 = {time.time() - start}")
