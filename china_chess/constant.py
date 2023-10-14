@@ -149,3 +149,5 @@ pieceset = {'A',
  'r'}
 
 countpiece = lambda x: sum([1 for i in x if i in pieceset])
+
+ROOT_PATH = Path(os.path.abspath(__file__)).parent.parent
