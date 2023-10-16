@@ -14,7 +14,6 @@ class CChessNNet(nn.Module):
         self.board_x, self.board_y = 10, 9
         self.action_size = len(LABELS)
         self.args = args
-
         self.channel = 128
 
         super(CChessNNet, self).__init__()

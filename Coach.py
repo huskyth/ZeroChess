@@ -11,6 +11,7 @@ import numpy as np
 from china_chess.algorithm.cchess.const_function import label2i, is_kill_move, labels_len, softmax
 from china_chess.algorithm.cchess.game_board import GameBoard
 from china_chess.algorithm.cchess.mcts_tree import MCTS_tree
+from china_chess.algorithm.file_writer import write_line
 
 from china_chess.algorithm.tensor_board_tool import MySummary
 from china_chess.constant import LABELS, LABELS_TO_INDEX, countpiece
@@ -21,7 +22,7 @@ log = logging.getLogger(__name__)
 
 class Coach:
 
-    def __init__(self, playout=400, in_search_threads=16, in_batch_size=512, exploration=True):
+    def __init__(self, playout=400, in_search_threads=16, in_batch_size=512, exploration=True, is_load=False):
         self.summary = MySummary("all_matrix")
 
         self.policy_value_network = PolicyValueNetwork(self.summary)
@@ -32,6 +33,7 @@ class Coach:
         self.kl_targ = 0.025
         self.lr_multiplier = 1.0  # adaptively adjust the learning rate based on KL
         self.learning_rate = 0.001  # 5e-3    #    0.001
+        self.is_load = is_load
 
         self.batch_size = in_batch_size  # 128    #512
         self.exploration = exploration
@@ -69,6 +71,10 @@ class Coach:
 
         return act, move_probs, win_rate
 
+    def write_current_board(self, title):
+        temp = "".join(self.game_board.display())
+        write_line(file_name="_end_", msg=temp, title=title)
+
     def execute_episode(self):
         # self_play function
         self.game_board.reload()
@@ -99,6 +105,7 @@ class Coach:
             current_players.append(self.game_board.current_player)
 
             last_state = self.game_board.state
+            last_player = self.game_board.current_player
             # print(self.game_board.current_player, " now take a action : ", action, "[Step {}]".format(self.game_board.round))
             self.game_board.state = GameBoard.sim_do_action(action, self.game_board.state)
             self.game_board.round += 1
@@ -120,10 +127,14 @@ class Coach:
                 z[np.array(current_players) != winnner] = -1.0
                 game_over = True
                 print("Game end. Winner is player : ", winnner, " In {} steps".format(self.game_board.round - 1))
+                self.write_current_board(title=f"当前胜利者为{winnner},行为是{action}, 执行者{last_player}")
+
             elif self.game_board.restrict_round >= 60:
                 z = np.zeros(len(current_players))
                 game_over = True
                 print("Game end. Tie in {} steps".format(self.game_board.round - 1))
+                self.write_current_board(title=f"和棋,行为是{action}, 执行者{last_player}")
+
             # elif(self.mcts.root.v < self.resign_threshold):
             #     pass
             # elif(self.mcts.root.Q < self.resign_threshold):
@@ -195,6 +206,8 @@ class Coach:
         # return loss, accuracy
 
     def learn(self):
+        if self.is_load:
+            self.policy_value_network.load_checkpoint()
         # self.game_loop
         batch_iter = 0
         update_iter = 0
@@ -248,7 +261,6 @@ class Coach:
             log.info('Loading done!')
 
             # examples based on the model were already collected (loaded)
-
 
 
 class CloudpickleWrapper(object):
