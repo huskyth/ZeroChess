@@ -58,10 +58,10 @@ class NNetWrapper(NeuralNet):
         ret_accuracy = torch.mean((torch.argmax(out_pi, 1) == torch.argmax(target_pis, 1)).float())
         ret_loss = total_loss
         # record loss
-        self.summary.add_float(step, l_pi, "Training Policy Loss")
-        self.summary.add_float(step, l_v, "Training Value Loss")
-        self.summary.add_float(step, ret_accuracy, "Training Accuracy")
-        self.summary.add_float(step, ret_loss, "Training ALl loss")
+        self.summary.add_float(step, l_pi, "Training Policy Loss", "step")
+        self.summary.add_float(step, l_v, "Training Value Loss", "step")
+        self.summary.add_float(step, ret_accuracy, "Training Accuracy", "step")
+        self.summary.add_float(step, ret_loss, "Training ALl loss", "step")
         # compute gradient and do SGD step
         optimizer.zero_grad()
         total_loss.backward()

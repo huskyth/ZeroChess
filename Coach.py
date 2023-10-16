@@ -185,10 +185,10 @@ class Coach:
             np.array(winner_batch))  # .flatten()
         explained_var_new = 1 - np.var(np.array(winner_batch) - new_v) / np.var(
             np.array(winner_batch))  # .flatten()
-        self.summary.add_float(batch_iter, kl, "KL")
-        self.summary.add_float(batch_iter, self.lr_multiplier, "LR Multiplier")
-        self.summary.add_float(batch_iter, explained_var_old, "Explained Var Old")
-        self.summary.add_float(batch_iter, explained_var_new, "Explained Var New")
+        self.summary.add_float(batch_iter, kl, "KL", "batch_iter")
+        self.summary.add_float(batch_iter, self.lr_multiplier, "LR Multiplier", "batch_iter")
+        self.summary.add_float(batch_iter, explained_var_old, "Explained Var Old", "batch_iter")
+        self.summary.add_float(batch_iter, explained_var_new, "Explained Var New", "batch_iter")
         print(
             "kl:{:.5f},lr_multiplier:{:.3f},explained_var_old:{:.3f},explained_var_new:{:.3f}".format(
                 kl, self.lr_multiplier, explained_var_old, explained_var_new))
