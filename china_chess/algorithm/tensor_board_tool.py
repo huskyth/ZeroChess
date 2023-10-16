@@ -13,7 +13,7 @@ class MySummary:
 
     def __init__(self, log_dir_name=None):
         wandb.login(key="613f55cae781fb261b18bad5ec25aa65766e6bc8")
-        ticks = str(time.strftime('%Y-%m-%d_%H:%M:%S', time.localtime(time.time())))
+        ticks = str(time.time())
         self.wandb_logger = wandb.init(project="ZeroChess" + ticks)
 
         log_path = str(log_dir / log_dir_name)
