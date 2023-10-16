@@ -15,5 +15,6 @@ china_chess/algorithm/checkpoint/
 china_chess/algorithm/checkpoint
 china_chess/summary
 china_chess/logger
+china_chess/wandb_log
 
 checkpoint/*

@@ -151,3 +151,7 @@ pieceset = {'A',
 countpiece = lambda x: sum([1 for i in x if i in pieceset])
 
 ROOT_PATH = Path(os.path.abspath(__file__)).parent.parent
+WANDB_PATH = Path(os.path.abspath(__file__)).parent / "wandb_log"
+if not os.path.exists(str(WANDB_PATH)):
+    os.mkdir(str(WANDB_PATH))
+

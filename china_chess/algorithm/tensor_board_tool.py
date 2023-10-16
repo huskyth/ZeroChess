@@ -2,7 +2,7 @@ import os
 import time
 
 from tensorboard import summary
-from china_chess.constant import SUMMARY_PATH
+from china_chess.constant import SUMMARY_PATH, WANDB_PATH
 from torch.utils.tensorboard import SummaryWriter
 import wandb
 
@@ -14,7 +14,7 @@ class MySummary:
     def __init__(self, log_dir_name=None):
         wandb.login(key="613f55cae781fb261b18bad5ec25aa65766e6bc8")
         ticks = str(time.time())
-        self.wandb_logger = wandb.init(project="ZeroChess" + ticks)
+        self.wandb_logger = wandb.init(project="ZeroChess" + ticks, dir=WANDB_PATH)
 
         log_path = str(log_dir / log_dir_name)
         if not os.path.exists(log_path):
