@@ -14,7 +14,7 @@ class CChessNNet(nn.Module):
         self.board_x, self.board_y = 10, 9
         self.action_size = len(LABELS)
         self.args = args
-        
+
         self.channel = 128
 
         super(CChessNNet, self).__init__()
@@ -53,14 +53,20 @@ class CChessNNet(nn.Module):
         self.conv72 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
         self.bn72 = nn.BatchNorm2d(self.channel)
 
-        self.conv8_left = nn.Conv2d(self.channel, 4, kernel_size=3, stride=1, padding=1)
-        self.bn8_left = nn.BatchNorm2d(4)
-        self.fc81_left = nn.Linear(360, 256)
-        self.fc82_left = nn.Linear(256, 1)
+        self.conv81 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.bn81 = nn.BatchNorm2d(self.channel)
+        self.conv82 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.bn82 = nn.BatchNorm2d(self.channel)
 
-        self.conv8_right = nn.Conv2d(self.channel, 32, kernel_size=3, stride=1, padding=1)
-        self.bn8_right = nn.BatchNorm2d(self.channel)
-        self.fc81_right = nn.Linear(2880, 2086)
+        self.conv9_left = nn.Conv2d(self.channel, 1, kernel_size=1, stride=1, padding=0)
+        self.bn9_left = nn.BatchNorm2d(1)
+
+        self.fc91_left = nn.Linear(90, 256)
+        self.fc92_left = nn.Linear(256, 1)
+
+        self.conv9_right = nn.Conv2d(self.channel, 2, kernel_size=1, stride=1, padding=0)
+        self.bn9_right = nn.BatchNorm2d(2)
+        self.fc91_right = nn.Linear(180, 2086)
 
     def forward(self, x):
         x = x.view(-1, 14, self.board_x, self.board_y)
@@ -71,20 +77,22 @@ class CChessNNet(nn.Module):
         x = self.relu(self._resnet(x, self.conv51, self.bn51, self.conv52, self.bn52))
         x = self.relu(self._resnet(x, self.conv61, self.bn61, self.conv62, self.bn62))
         x = self.relu(self._resnet(x, self.conv71, self.bn71, self.conv72, self.bn72))
+        x = self.relu(self._resnet(x, self.conv81, self.bn81, self.conv82, self.bn82))
 
-        x_left = F.dropout(self.relu(self.bn8_left(self.conv8_left(x))), p=0.3,
-                           training=self.training)
+        x_left = self.relu(self.bn9_left(self.conv9_left(x)))
+        x_left = torch.flatten(x_left).view(-1, 90)
 
-        x_left = torch.flatten(x_left).view(-1, 360)
-        x_left = F.dropout(self.relu(self.fc81_left(x_left)), p=0.3,
-                           training=self.training)
-        x_left = self.fc82_left(x_left)
+        x_left = self.fc91_left(x_left)
+        x_left = self.fc92_left(x_left)
 
-        x_right = self.relu(self.conv8_right(x))
-        x_right = F.dropout(x_right, p=0.3,
-                            training=self.training)
-
-        x_right = torch.flatten(x_right).view(-1, 2880)
-        x_right = self.fc81_right(x_right)
+        x_right = self.relu(self.bn9_right(self.conv9_right(x)))
+        x_right = torch.flatten(x_right).view(-1, 180)
+        x_right = self.fc91_right(x_right)
 
         return F.log_softmax(x_right, dim=1), torch.tanh(x_left)
+
+
+if __name__ == '__main__':
+    data = torch.ones((1, 9, 10, 14))
+    y = CChessNNet(None)(data)
+    print()
