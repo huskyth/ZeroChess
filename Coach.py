@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 
 class Coach:
 
-    def __init__(self, playout=400, in_search_threads=16, in_batch_size=512, exploration=True):
+    def __init__(self, playout=8, in_search_threads=16, in_batch_size=512, exploration=True):
         self.summary = MySummary("all_matrix")
 
         self.policy_value_network = PolicyValueNetwork(self.summary)
