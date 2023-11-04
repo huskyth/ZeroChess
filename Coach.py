@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 
 class Coach:
 
-    def __init__(self, playout=8, in_search_threads=16, in_batch_size=512, exploration=True):
+    def __init__(self, playout=400, in_search_threads=16, in_batch_size=512, exploration=True):
         self.summary = MySummary("all_matrix")
 
         self.policy_value_network = PolicyValueNetwork(self.summary)
@@ -176,7 +176,7 @@ class Coach:
         print("train using time {} s".format(time.time() - start_time))
 
         # adaptively adjust the learning rate
-        if kl > self.kl_targ * 2 and self.lr_multiplier > 0.01:
+        if kl > self.kl_targ * 2 and self.lr_multiplier > 0.1:
             self.lr_multiplier /= 1.5
         elif kl < self.kl_targ / 2 and self.lr_multiplier < 10:
             self.lr_multiplier *= 1.5
