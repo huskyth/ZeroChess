@@ -5,6 +5,8 @@ import time
 import numpy as np
 from tqdm import tqdm
 
+from china_chess.algorithm.cchess_net_transformer import CChessNNetWithTransformer
+
 sys.path.append('../../')
 from utils import *
 from NeuralNet import NeuralNet
@@ -28,7 +30,7 @@ args = dotdict({
 
 class NNetWrapper(NeuralNet):
     def __init__(self, summary_writer):
-        self.nnet = CChessNNet(args)
+        self.nnet = CChessNNetWithTransformer(args)
         self.board_x, self.board_y = 10, 9
         self.action_size = len(LABELS)
         self.summary = summary_writer
