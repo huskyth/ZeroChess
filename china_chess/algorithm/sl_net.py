@@ -1,21 +1,11 @@
-import os
 import sys
-import time
 
 import numpy as np
-from tqdm import tqdm
 
 from china_chess.algorithm.cchess_net_transformer import CChessNNetWithTransformer
 
 sys.path.append('../../')
-from utils import *
 from NeuralNet import NeuralNet
-from china_chess.constant import *
-import torch
-import torch.optim as optim
-from china_chess.algorithm.tensor_board_tool import *
-from random import shuffle
-from china_chess.algorithm.cchess_net import *
 from othello.pytorch.OthelloNNet import *
 
 args = dotdict({
@@ -31,6 +21,7 @@ criterion = torch.nn.CrossEntropyLoss()
 
 class NNetWrapper(NeuralNet):
     def __init__(self, summary_writer):
+        super().__init__(None)
         self.nnet = CChessNNetWithTransformer(args)
         self.board_x, self.board_y = 10, 9
         self.action_size = len(LABELS)
@@ -40,7 +31,7 @@ class NNetWrapper(NeuralNet):
             self.nnet.cuda()
 
     def train(self, state_batch, mcts_probs_batch, winner_batch, step, lr):
-        optimizer = optim.Adam(self.nnet.parameters(), lr=lr, weight_decay=0.0001)
+        optimizer = optim.Adam(self.nnet.parameters(), lr=lr, weight_decay=0.001)
 
         print(f'UPDATE ITER ::: {step}')
         self.nnet.train()

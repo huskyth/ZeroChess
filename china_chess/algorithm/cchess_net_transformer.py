@@ -17,11 +17,8 @@ class CChessNNetWithTransformer(nn.Module):
         self.action_size = len(LABELS)
         self.args = args
         self.channel = 128
-        self.layers = 6
 
         super(CChessNNetWithTransformer, self).__init__()
-
-        self.transformer_block = TransformerBlock(14, 14, 1, self.layers)
 
         self.conv1 = nn.Conv2d(14, out_channels=self.channel, kernel_size=3, stride=1, padding=1)
         self.bn1 = nn.BatchNorm2d(self.channel)
@@ -87,7 +84,7 @@ class CChessNNetWithTransformer(nn.Module):
         x_left = self.relu(self.bn9_left(self.conv9_left(x)))
         x_left = torch.flatten(x_left).view(-1, 90)
 
-        x_left = self.fc91_left(x_left)
+        x_left = self.relu(self.fc91_left(x_left))
         x_left = self.fc92_left(x_left)
 
         x_right = self.relu(self.bn9_right(self.conv9_right(x)))

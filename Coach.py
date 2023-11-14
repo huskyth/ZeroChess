@@ -14,7 +14,6 @@ from china_chess.algorithm.cchess.mcts_tree import MCTS_tree
 from china_chess.algorithm.file_writer import write_line
 
 from china_chess.algorithm.tensor_board_tool import MySummary
-from china_chess.constant import LABELS, LABELS_TO_INDEX, countpiece
 from china_chess.algorithm.sl_net import NNetWrapper as PolicyValueNetwork
 
 log = logging.getLogger(__name__)
