@@ -71,7 +71,7 @@ class CChessNNetWithTransformer(nn.Module):
 
     def forward(self, x):
         x = x.view(-1, 14, self.board_x, self.board_y)
-        x = self.transformer_block(x)
+
         x = self.relu(self.bn1(self.conv1(x)))
         x = self.relu(self._resnet(x, self.conv21, self.bn21, self.conv22, self.bn22))
         x = self.relu(self._resnet(x, self.conv31, self.bn31, self.conv32, self.bn32))
