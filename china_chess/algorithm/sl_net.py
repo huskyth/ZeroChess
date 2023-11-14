@@ -26,6 +26,7 @@ args = dotdict({
     'cuda': torch.cuda.is_available(),
     'num_channels': 128,
 })
+criterion = torch.nn.CrossEntropyLoss()
 
 
 class NNetWrapper(NeuralNet):
@@ -90,10 +91,10 @@ class NNetWrapper(NeuralNet):
         return torch.exp(pi).data.cpu().numpy(), v.data.cpu().numpy()
 
     def loss_pi(self, targets, outputs):
-        return -torch.sum(targets * outputs) / targets.size()[0] + torch.mean(abs(targets - outputs))
+        return criterion(outputs, targets)
 
     def loss_v(self, targets, outputs):
-        return torch.sum((targets - outputs.view(-1)) ** 2) / targets.size()[0]
+        return torch.sum((targets - outputs) ** 2) / targets.size()[0]
 
     def save_checkpoint(self, folder='checkpoint', filename='checkpoint.pth.tar'):
         filepath = os.path.join(folder, filename)
