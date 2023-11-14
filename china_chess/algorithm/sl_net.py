@@ -40,7 +40,7 @@ class NNetWrapper(NeuralNet):
             self.nnet.cuda()
 
     def train(self, state_batch, mcts_probs_batch, winner_batch, step, lr):
-        optimizer = optim.Adam(self.nnet.parameters(), lr=lr, weight_decay=0.01)
+        optimizer = optim.Adam(self.nnet.parameters(), lr=lr, weight_decay=0.0001)
 
         print(f'UPDATE ITER ::: {step}')
         self.nnet.train()
