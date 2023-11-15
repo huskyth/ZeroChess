@@ -38,7 +38,7 @@ class Regularization(torch.nn.Module):
         :return:
         '''
         weight_list = []
-        for name, param in model.named_parameters():
+        for name, param in model.nnet.named_parameters():
             if 'weight' in name:
                 weight = (name, param)
                 weight_list.append(weight)
