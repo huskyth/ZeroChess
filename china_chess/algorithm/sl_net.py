@@ -3,6 +3,7 @@ import sys
 import numpy as np
 
 from china_chess.algorithm.cchess_net_transformer import CChessNNetWithTransformer
+from china_chess.algorithm.common.Regularization import Regularization
 
 sys.path.append('../../')
 from NeuralNet import NeuralNet
@@ -17,6 +18,7 @@ args = dotdict({
     'num_channels': 128,
 })
 criterion = torch.nn.CrossEntropyLoss()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class NNetWrapper(NeuralNet):
@@ -26,12 +28,16 @@ class NNetWrapper(NeuralNet):
         self.board_x, self.board_y = 10, 9
         self.action_size = len(LABELS)
         self.summary = summary_writer
+        self.weight_decay = 0.01
+        self.reg_loss = Regularization(self.weight_decay, p=2)
+
         if args.cuda:
             print("使用了CUDA")
             self.nnet.cuda()
+            self.reg_loss.to(device)
 
     def train(self, state_batch, mcts_probs_batch, winner_batch, step, lr):
-        optimizer = optim.Adam(self.nnet.parameters(), lr=lr, weight_decay=0.001)
+        optimizer = optim.SGD(self.nnet.parameters(), lr=lr, momentum=0.9)
 
         print(f'UPDATE ITER ::: {step}')
         self.nnet.train()
@@ -48,12 +54,14 @@ class NNetWrapper(NeuralNet):
         out_pi, out_v = self.nnet(boards)
         l_pi = self.loss_pi(target_pis, out_pi)
         l_v = self.loss_v(target_vs, out_v)
-        total_loss = l_pi + l_v
+        l2_loss = self.reg_loss(self)
+        total_loss = l_pi + l_v + l2_loss
         ret_accuracy = torch.mean((torch.argmax(out_pi, 1) == torch.argmax(target_pis, 1)).float())
         ret_loss = total_loss
         # record loss
         self.summary.add_float(step, l_pi, "Training Policy Loss", "step")
         self.summary.add_float(step, l_v, "Training Value Loss", "step")
+        self.summary.add_float(step, l2_loss, "Regularization Loss", "step")
         self.summary.add_float(step, ret_accuracy, "Training Accuracy", "step")
         self.summary.add_float(step, ret_loss, "Training ALl loss", "step")
         # compute gradient and do SGD step

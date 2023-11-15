@@ -11,6 +11,7 @@ import numpy as np
 from china_chess.algorithm.cchess.const_function import label2i, is_kill_move, labels_len, softmax
 from china_chess.algorithm.cchess.game_board import GameBoard
 from china_chess.algorithm.cchess.mcts_tree import MCTS_tree
+from china_chess.algorithm.common.Regularization import Regularization
 from china_chess.algorithm.file_writer import write_line
 
 from china_chess.algorithm.tensor_board_tool import MySummary
@@ -25,6 +26,7 @@ class Coach:
         self.summary = MySummary("all_matrix")
 
         self.policy_value_network = PolicyValueNetwork(self.summary)
+
         self.buffer_size = 10000
         self.temperature = 1  # 1e-8    1e-3
         self.playout_counts = playout  # 400    #800    #1600    200
