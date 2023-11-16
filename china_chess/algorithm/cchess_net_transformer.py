@@ -91,4 +91,4 @@ class CChessNNetWithTransformer(nn.Module):
         x_right = torch.flatten(x_right).view(-1, 180)
         x_right = self.fc91_right(x_right)
 
-        return x_right, torch.tanh(x_left)
+        return F.log_softmax(x_right, dim=1), torch.tanh(x_left)

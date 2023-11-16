@@ -90,7 +90,7 @@ class NNetWrapper(NeuralNet):
         return torch.exp(pi).data.cpu().numpy(), v.data.cpu().numpy()
 
     def loss_pi(self, targets, outputs):
-        return criterion(outputs, targets)
+        return -torch.sum(targets * outputs) / targets.size()[0]
 
     def loss_v(self, targets, outputs):
         return torch.sum((targets - outputs) ** 2) / targets.size()[0]
