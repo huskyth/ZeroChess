@@ -54,7 +54,7 @@ class NNetWrapper(NeuralNet):
         out_pi, out_v = self.nnet(boards)
         l_pi = self.loss_pi(target_pis, out_pi)
         l_v = self.loss_v(target_vs, out_v)
-        l2_loss = self.reg_loss(self)
+        l2_loss, grad_sum = self.reg_loss(self)
         total_loss = l_pi + l_v + l2_loss
         ret_accuracy = torch.mean((torch.argmax(out_pi, 1) == torch.argmax(target_pis, 1)).float())
         ret_loss = total_loss
@@ -62,6 +62,7 @@ class NNetWrapper(NeuralNet):
         self.summary.add_float(step, l_pi, "Training Policy Loss", "step")
         self.summary.add_float(step, l_v, "Training Value Loss", "step")
         self.summary.add_float(step, l2_loss, "Regularization Loss", "step")
+        self.summary.add_float(step, grad_sum, "Grad Norm 1 Loss", "step")
         self.summary.add_float(step, ret_accuracy, "Training Accuracy", "step")
         self.summary.add_float(step, ret_loss, "Training ALl loss", "step")
         # compute gradient and do SGD step

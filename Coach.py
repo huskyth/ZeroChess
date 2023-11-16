@@ -11,7 +11,6 @@ import numpy as np
 from china_chess.algorithm.cchess.const_function import label2i, is_kill_move, labels_len, softmax
 from china_chess.algorithm.cchess.game_board import GameBoard
 from china_chess.algorithm.cchess.mcts_tree import MCTS_tree
-from china_chess.algorithm.common.Regularization import Regularization
 from china_chess.algorithm.file_writer import write_line
 
 from china_chess.algorithm.tensor_board_tool import MySummary
