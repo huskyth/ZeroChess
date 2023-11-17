@@ -59,15 +59,17 @@ class Regularization(torch.nn.Module):
         reg_loss = 0
 
         grad_sum = 0
+        grad_sum_norm_1 = 0
         for name, w in weight_list:
             l2_reg = torch.norm(w, p=p)
             reg_loss = reg_loss + l2_reg
 
             if w.grad is not None:
                 grad_sum += torch.norm(w.grad, p=2)
+                grad_sum_norm_1 += torch.norm(w.grad, p=1)
 
         reg_loss = weight_decay * reg_loss
-        return reg_loss, grad_sum
+        return reg_loss, grad_sum, grad_sum_norm_1
 
     def weight_info(self, weight_list):
         '''
