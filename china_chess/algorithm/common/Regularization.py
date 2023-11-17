@@ -64,7 +64,7 @@ class Regularization(torch.nn.Module):
             reg_loss = reg_loss + l2_reg
 
             if w.grad is not None:
-                grad_sum += torch.norm(w.grad, p=1)
+                grad_sum += torch.norm(w.grad, p=2)
 
         reg_loss = weight_decay * reg_loss
         return reg_loss, grad_sum
