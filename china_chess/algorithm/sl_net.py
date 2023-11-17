@@ -28,8 +28,9 @@ class NNetWrapper(NeuralNet):
         self.board_x, self.board_y = 10, 9
         self.action_size = len(LABELS)
         self.summary = summary_writer
-        self.weight_decay = 0.01
+        self.weight_decay = 0.001
         self.reg_loss = Regularization(self.weight_decay, p=2)
+        self.clip_grad = 100
 
         if args.cuda:
             print("使用了CUDA")
@@ -68,6 +69,7 @@ class NNetWrapper(NeuralNet):
         # compute gradient and do SGD step
         optimizer.zero_grad()
         total_loss.backward()
+        nn.utils.clip_grad_norm_(self.nnet.parameters(), max_norm=self.clip_grad)
         optimizer.step()
         return ret_accuracy, ret_loss
 
