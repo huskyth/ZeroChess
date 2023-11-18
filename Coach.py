@@ -21,8 +21,8 @@ log = logging.getLogger(__name__)
 
 class Coach:
 
-    def __init__(self, playout=400, in_search_threads=16, in_batch_size=512, exploration=True, is_load=False):
-        self.summary = MySummary("all_matrix")
+    def __init__(self, playout=1200, in_search_threads=16, in_batch_size=512, exploration=True, is_load=False):
+        self.summary = MySummary("all_matrix", False)
 
         self.policy_value_network = PolicyValueNetwork(self.summary)
 
@@ -32,7 +32,7 @@ class Coach:
         self.epochs = 5
         self.kl_targ = 0.025
         self.lr_multiplier = 1.0  # adaptively adjust the learning rate based on KL
-        self.learning_rate = 0.0001  # 5e-3    #    0.001
+        self.learning_rate = 0.001  # 5e-3    #    0.001
         self.is_load = is_load
 
         self.batch_size = in_batch_size  # 128    #512
