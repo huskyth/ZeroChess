@@ -32,7 +32,7 @@ class Coach:
         self.epochs = 5
         self.kl_targ = 0.025
         self.lr_multiplier = 1.0  # adaptively adjust the learning rate based on KL
-        self.learning_rate = 0.001  # 5e-3    #    0.001
+        self.learning_rate = 0.0001  # 5e-3    #    0.001
         self.is_load = is_load
 
         self.batch_size = in_batch_size  # 128    #512

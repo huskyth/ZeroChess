@@ -30,7 +30,7 @@ class NNetWrapper(NeuralNet):
         self.summary = summary_writer
         self.weight_decay = 0.001
         self.reg_loss = Regularization(self.weight_decay, p=2)
-        self.clip_grad = 100
+        self.clip_grad = 20
 
         if args.cuda:
             print("使用了CUDA")
