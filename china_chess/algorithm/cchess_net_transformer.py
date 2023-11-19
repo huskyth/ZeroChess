@@ -20,52 +20,52 @@ class CChessNNetWithTransformer(nn.Module):
 
         super(CChessNNetWithTransformer, self).__init__()
 
-        self.conv1 = nn.Conv2d(14, out_channels=self.channel, kernel_size=3, stride=1, padding=1)
+        self.conv1 = nn.Conv2d(14, out_channels=self.channel, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(self.channel)
         self.relu = F.relu
 
-        self.conv21 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.conv21 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1, bias=False)
         self.bn21 = nn.BatchNorm2d(self.channel)
-        self.conv22 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.conv22 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1, bias=False)
         self.bn22 = nn.BatchNorm2d(self.channel)
 
-        self.conv31 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.conv31 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1, bias=False)
         self.bn31 = nn.BatchNorm2d(self.channel)
-        self.conv32 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.conv32 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1, bias=False)
         self.bn32 = nn.BatchNorm2d(self.channel)
 
-        self.conv41 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.conv41 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1, bias=False)
         self.bn41 = nn.BatchNorm2d(self.channel)
-        self.conv42 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.conv42 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1, bias=False)
         self.bn42 = nn.BatchNorm2d(self.channel)
 
-        self.conv51 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.conv51 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1, bias=False)
         self.bn51 = nn.BatchNorm2d(self.channel)
-        self.conv52 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.conv52 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1, bias=False)
         self.bn52 = nn.BatchNorm2d(self.channel)
 
-        self.conv61 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.conv61 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1, bias=False)
         self.bn61 = nn.BatchNorm2d(self.channel)
-        self.conv62 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.conv62 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1, bias=False)
         self.bn62 = nn.BatchNorm2d(self.channel)
 
-        self.conv71 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.conv71 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1, bias=False)
         self.bn71 = nn.BatchNorm2d(self.channel)
-        self.conv72 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.conv72 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1, bias=False)
         self.bn72 = nn.BatchNorm2d(self.channel)
 
-        self.conv81 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.conv81 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1, bias=False)
         self.bn81 = nn.BatchNorm2d(self.channel)
-        self.conv82 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1)
+        self.conv82 = nn.Conv2d(self.channel, self.channel, 3, stride=1, padding=1, bias=False)
         self.bn82 = nn.BatchNorm2d(self.channel)
 
-        self.conv9_left = nn.Conv2d(self.channel, 1, kernel_size=1, stride=1, padding=0)
+        self.conv9_left = nn.Conv2d(self.channel, 1, kernel_size=1, stride=1, padding=0, bias=False)
         self.bn9_left = nn.BatchNorm2d(1)
 
         self.fc91_left = nn.Linear(90, 256)
         self.fc92_left = nn.Linear(256, 1)
 
-        self.conv9_right = nn.Conv2d(self.channel, 2, kernel_size=1, stride=1, padding=0)
+        self.conv9_right = nn.Conv2d(self.channel, 2, kernel_size=1, stride=1, padding=0, bias=False)
         self.bn9_right = nn.BatchNorm2d(2)
         self.fc91_right = nn.Linear(180, 2086)
 
